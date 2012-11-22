@@ -1,9 +1,4 @@
 
--- require "GameInfo"
--- require "Commands"
-require "Commander"
--- require "CommanderFactory"
-
 local MyCommander = class(Commander)
 
 function MyCommander:new(...)

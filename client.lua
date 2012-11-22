@@ -2,40 +2,6 @@
 package.path = package.path .. ";./api/?.lua"
 io.stdout:setvbuf("no")
 
---[[
--- test commands
-do
-	require "Commands"
-end
-
--- test game infos
-do
-	require "GameInfo"
-end
-
--- test commander
-do
-	require "Commander"
-end
-
--- test api
-do
-	require "json"
-end
-
--- test commander
-do
-	local MyCommander = require "MyCommander"
-
-	local commander = MyCommander()
-	print(commander:getName())
-
-	commander:initialize()
-	commander:tick()
-	commander:shutdown()
-end
-]]
-
 -- main
 local HOST = "localhost"
 local PORT = "41041"
@@ -100,7 +66,7 @@ local function readline()
 	local line, err, partial = s:receive("*l", partial)
 	if line ~= nil then
 		buffer = ""
-		print(string.format("line received: %s", line))
+		-- print(string.format("line received: %s", line))
 		return line
 	else
 		if err == "closed" then
@@ -122,7 +88,7 @@ local function writeline(_line)
 			error(string.format("Error sending data to server. %s", _line))
 		end
 	else
-		print(string.format("line sent: %s", _line))
+		-- print(string.format("line sent: %s", _line))
 	end
 end
 
@@ -137,13 +103,13 @@ if message ~= "<connect>" then
 	error(string.format("Expected connect message from the game server. Received %s", message))
 end
 local connectServerMessage = readline()
-local connectServer = json.decode(ConnectServer, connectServerMessage)
+local connectServer = JSON.decode(ConnectServer, connectServerMessage)
 if not connectServer:validate() then
 	error("connectServer give wrong version")
 end
 
 local connectClient = ConnectClient(commanderName, commander:getLanguage())
-local connectClientJson = json.encode(ConnectClient, connectClient)
+local connectClientJson = JSON.encode(ConnectClient, connectClient)
 writeline("<connect>")
 writeline(connectClientJson)
 
@@ -153,8 +119,8 @@ local message = readline()
 if message ~= "<initialize>" then
 	error(string.format("Expected initialize message from the game server. Received %s", message))
 end
-local levelInfo = json.decode(LevelInfo, readline())
-local gameInfo = json.decode(GameInfo, readline())
+local levelInfo = JSON.decode(LevelInfo, readline())
+local gameInfo = JSON.decode(GameInfo, readline())
 commander.level = levelInfo
 commander.game = gameInfo
 commander:initialize()
@@ -166,12 +132,12 @@ local shutdown = false
 while not shutdown do
 	local message = readline()
 	if message == "<tick>" then
-		local gameInfo = json.decode(GameInfo, readline())
+		local gameInfo = JSON.decode(GameInfo, readline())
 		
 		commander:tick()
 		
         for _, command in ipairs(commander.commands) do
-            local commandJson = json.encode(command:GetClass(), command)
+            local commandJson = JSON.encode(command:GetClass(), command)
 			writeline("<command>")
 			writeline(commandJson)
         end

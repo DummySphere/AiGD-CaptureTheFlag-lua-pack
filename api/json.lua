@@ -1,28 +1,28 @@
 
 ----------------------------------------------------------------------
--- json base
+-- JSON base
 
-json = { null = {}, codec = {} }
+JSON = { null = {}, codec = {} }
 
-function json.register(_class, _name, _object_to_table, _table_to_object)
+function JSON.register(_class, _name, _object_to_table, _table_to_object)
 	local codec = { class = _class, name = _name, serialize = _object_to_table, unserialize = _table_to_object }
-	json.codec[_class] = codec
-	json.codec[_name] = codec
+	JSON.codec[_class] = codec
+	JSON.codec[_name] = codec
 end
 
-function json.object_to_table(_name_or_class, _object, ...)
-	local codec = json.codec[_name_or_class]
+function JSON.object_to_table(_name_or_class, _object, ...)
+	local codec = JSON.codec[_name_or_class]
 	assert(codec ~= nil)
 	return { __class__ = codec.name, __value__ = codec.serialize(_object, ...) }
 end
-function json.table_to_object(_name_or_class, _table, ...)
-	local codec = json.codec[_name_or_class]
+function JSON.table_to_object(_name_or_class, _table, ...)
+	local codec = JSON.codec[_name_or_class]
 	assert(codec ~= nil)
 	assert(_table.__class__ == codec.name)
 	assert(type(_table.__value__) == "table")
 	return codec.unserialize(_table.__value__, ...)
 end
-function json.parse_map(_func, _name_or_class, _map, ...)
+function JSON.parse_map(_func, _name_or_class, _map, ...)
 	local new_map = {}
 	for key, value in pairs(_map) do
 		new_map[key] = _func(_name_or_class, value, ...)
@@ -30,7 +30,7 @@ function json.parse_map(_func, _name_or_class, _map, ...)
 	return new_map
 end
 
-function json.table_to_text(_table)
+function JSON.table_to_json(_table)
 	local table_len = #_table
 	local table_type = "array"
 	for key, value in pairs(_table) do
@@ -40,13 +40,13 @@ function json.table_to_text(_table)
 		end
 	end
 	
-	local function value_to_text(_value)
-		if _value == json.null then
+	local function value_to_json(_value)
+		if _value == JSON.null then
 			return "null"
 		else
 			local value_type = type(_value)
 			if value_type == "table" then
-				return json.table_to_text(_value)
+				return JSON.table_to_json(_value)
 			elseif value_type == "number" or value_type == "boolean" then
 				return tostring(_value)
 			else
@@ -54,40 +54,40 @@ function json.table_to_text(_table)
 			end
 		end
 	end
-	local json_code
+	local json
 	if table_type == "array" then
-		json_code = "["
+		json = "["
 		local first = true
 		for _, value in ipairs(_table) do
 			if first then
 				first = false
 			else
-				json_code = json_code .. ", "
+				json = json .. ", "
 			end
-			json_code = json_code .. value_to_text(value)
+			json = json .. value_to_json(value)
 		end
-		json_code = json_code .. "]"
+		json = json .. "]"
 	else
-		json_code = "{"
+		json = "{"
 		local first = true
 		for key, value in pairs(_table) do
 			if first then
 				first = false
 			else
-				json_code = json_code .. ", "
+				json = json .. ", "
 			end
-			json_code = json_code .. string.format("%q: ", key) .. value_to_text(value)
+			json = json .. string.format("%q: ", key) .. value_to_json(value)
 		end
-		json_code = json_code .. "}"
+		json = json .. "}"
 	end
 	
-	-- print(json_code)
-	return json_code
+	-- print(json)
+	return json
 end
 -- local lua_table = {["__class__"] = "GameInfo", ["__value__"] = {["teams"] = {["Blue"] = {["__class__"] = "TeamInfo", ["__value__"] = {["flagScoreLocation"] = {82.0, 20.0}, ["name"] = "Blue", ["flagSpawnLocation"] = {82.0, 20.0}, ["flag"] = "BlueFlag", ["members"] = {"Blue0", "Blue1", "Blue2", "Blue3", "Blue4"}, ["botSpawnArea"] = {{79.0, 2.0}, {85.0, 9.0}}}}, ["Red"] = {["__class__"] = "TeamInfo", ["__value__"] = {["flagScoreLocation"] = {6.0, 30.0}, ["name"] = "Red", ["flagSpawnLocation"] = {6.0, 30.0}, ["flag"] = "RedFlag", ["members"] = {"Red0", "Red1", "Red2", "Red3", "Red4"}, ["botSpawnArea"] = {{3.0, 41.0}, {9.0, 48.0}}}}}, ["flags"] = {["BlueFlag"] = {["__class__"] = "FlagInfo", ["__value__"] = {["position"] = {82.0, 20.0}, ["carrier"] = null, ["name"] = "BlueFlag", ["respawnTimer"] = -7.450580596923828e-09, ["team"] = "Blue"}}, ["RedFlag"] = {["__class__"] = "FlagInfo", ["__value__"] = {["position"] = {9.723822593688965, 28.638526916503906}, ["carrier"] = "Blue1", ["name"] = "RedFlag", ["respawnTimer"] = -7.450580596923828e-09, ["team"] = "Red"}}}, ["enemyTeam"] = "Red", ["team"] = "Blue", ["bots"] = {["Red3"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Red3", ["facingDirection"] = {0.9375345706939697, -0.3478919267654419}, ["state"] = 6, ["health"] = 0, ["seenlast"] = 13.370665550231934, ["team"] = "Red", ["currentAction"] = "ShootAtCommand", ["position"] = {35.6309928894043, 26.81215476989746}, ["visibleEnemies"] = {}}}, ["Red2"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {"Blue0"}, ["flag"] = null, ["name"] = "Red2", ["facingDirection"] = {0.9123391509056091, -0.4094350337982178}, ["state"] = 6, ["health"] = 0, ["seenlast"] = 0.0, ["team"] = "Red", ["currentAction"] = "ShootAtCommand", ["position"] = {68.28890991210938, 25.360763549804688}, ["visibleEnemies"] = {}}}, ["Red1"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {"Blue0"}, ["flag"] = null, ["name"] = "Red1", ["facingDirection"] = {-0.9972056150436401, 0.07470673322677612}, ["state"] = 4, ["health"] = 0, ["seenlast"] = 0.0, ["team"] = "Red", ["currentAction"] = "AttackCommand", ["position"] = {68.53483581542969, 25.27260398864746}, ["visibleEnemies"] = {}}}, ["Red0"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Red0", ["facingDirection"] = {0.9994280338287354, -0.033820152282714844}, ["state"] = 6, ["health"] = 0, ["seenlast"] = 13.370665550231934, ["team"] = "Red", ["currentAction"] = "ShootAtCommand", ["position"] = {34.46906280517578, 24.155515670776367}, ["visibleEnemies"] = {}}}, ["Red4"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {"Blue0"}, ["flag"] = null, ["name"] = "Red4", ["facingDirection"] = {0.912505030632019, -0.4090656042098999}, ["state"] = 6, ["health"] = 0, ["seenlast"] = 0.0, ["team"] = "Red", ["currentAction"] = "ShootAtCommand", ["position"] = {68.30572509765625, 25.36515998840332}, ["visibleEnemies"] = {}}}, ["Blue1"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = "RedFlag", ["name"] = "Blue1", ["facingDirection"] = {0.9242773652076721, -0.3817223310470581}, ["state"] = 3, ["health"] = 100.0, ["seenlast"] = null, ["team"] = "Blue", ["currentAction"] = "MoveCommand", ["position"] = {9.723822593688965, 28.638526916503906}, ["visibleEnemies"] = {}}}, ["Blue0"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Blue0", ["facingDirection"] = {-0.9890086054801941, 0.14785832166671753}, ["state"] = 1, ["health"] = 100.0, ["seenlast"] = null, ["team"] = "Blue", ["currentAction"] = null, ["position"] = {81.625, 19.375}, ["visibleEnemies"] = {"Red2", "Red1", "Red4"}}}, ["Blue3"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Blue3", ["facingDirection"] = {-0.9994280338287354, 0.03381979465484619}, ["state"] = 1, ["health"] = 0, ["seenlast"] = null, ["team"] = "Blue", ["currentAction"] = null, ["position"] = {48.790069580078125, 23.665205001831055}, ["visibleEnemies"] = {}}}, ["Blue2"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Blue2", ["facingDirection"] = {-0.9112738966941833, 0.411800742149353}, ["state"] = 6, ["health"] = 0, ["seenlast"] = null, ["team"] = "Blue", ["currentAction"] = "ShootAtCommand", ["position"] = {57.94633102416992, 32.63374710083008}, ["visibleEnemies"] = {}}}, ["Blue4"] = {["__class__"] = "BotInfo", ["__value__"] = {["seenBy"] = {}, ["flag"] = null, ["name"] = "Blue4", ["facingDirection"] = {-0.9575538635253906, 0.2882544994354248}, ["state"] = 6, ["health"] = 0, ["seenlast"] = null, ["team"] = "Blue", ["currentAction"] = "ShootAtCommand", ["position"] = {47.545501708984375, 19.977867126464844}, ["visibleEnemies"] = {}}}}, ["match"] = {["__class__"] = "MatchInfo", ["__value__"] = {["timeRemaining"] = 148.42462158203125, ["timeToNextRespawn"] = 13.427755355834961, ["combatEvents"] = {{["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue3", ["time"] = 14.939663887023926, ["type"] = 1, ["subject"] = "Red3"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Red2", ["time"] = 16.550338745117188, ["type"] = 1, ["subject"] = "Blue2"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Red4", ["time"] = 16.550338745117188, ["type"] = 1, ["subject"] = "Blue2"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Red0", ["time"] = 17.310344696044922, ["type"] = 1, ["subject"] = "Blue4"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue3", ["time"] = 18.036685943603516, ["type"] = 1, ["subject"] = "Red0"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Red1", ["time"] = 18.201021194458008, ["type"] = 1, ["subject"] = "Blue3"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue0", ["time"] = 28.15752601623535, ["type"] = 1, ["subject"] = "Red4"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue1", ["time"] = 28.15752601623535, ["type"] = 2, ["subject"] = "RedFlag"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue0", ["time"] = 28.616199493408203, ["type"] = 1, ["subject"] = "Red2"}}, {["__class__"] = "MatchCombatEvent", ["__value__"] = {["instigator"] = "Blue0", ["time"] = 29.308876037597656, ["type"] = 1, ["subject"] = "Red1"}}}, ["timePassed"] = 31.5719051361084, ["scores"] = {["Blue"] = 0, ["Red"] = 0}}}}}
--- local t = json.table_to_text(lua_table)
-function json.text_to_table(_text)
-	local lua_code = _text
+-- local t = JSON.table_to_json(lua_table)
+function JSON.json_to_table(_json)
+	local lua_code = _json
 	-- print(lua_code)
 	
 	local count = nil
@@ -115,21 +115,21 @@ function json.text_to_table(_text)
 	
 	return chunk()
 end
--- local json_text = [=[{"__class__": "GameInfo", "__value__": {"teams": {"Blue": {"__class__": "TeamInfo", "__value__": {"flagScoreLocation": [82.0, 20.0], "name": "Blue", "flagSpawnLocation": [82.0, 20.0], "flag": "BlueFlag", "members": ["Blue0", "Blue1", "Blue2", "Blue3", "Blue4"], "botSpawnArea": [[79.0, 2.0], [85.0, 9.0]]}}, "Red": {"__class__": "TeamInfo", "__value__": {"flagScoreLocation": [6.0, 30.0], "name": "Red", "flagSpawnLocation": [6.0, 30.0], "flag": "RedFlag", "members": ["Red0", "Red1", "Red2", "Red3", "Red4"], "botSpawnArea": [[3.0, 41.0], [9.0, 48.0]]}}}, "flags": {"BlueFlag": {"__class__": "FlagInfo", "__value__": {"position": [82.0, 20.0], "carrier": null, "name": "BlueFlag", "respawnTimer": -7.450580596923828e-09, "team": "Blue"}}, "RedFlag": {"__class__": "FlagInfo", "__value__": {"position": [9.723822593688965, 28.638526916503906], "carrier": "Blue1", "name": "RedFlag", "respawnTimer": -7.450580596923828e-09, "team": "Red"}}}, "enemyTeam": "Red", "team": "Blue", "bots": {"Red3": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Red3", "facingDirection": [0.9375345706939697, -0.3478919267654419], "state": 6, "health": 0, "seenlast": 13.370665550231934, "team": "Red", "currentAction": "ShootAtCommand", "position": [35.6309928894043, 26.81215476989746], "visibleEnemies": []}}, "Red2": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red2", "facingDirection": [0.9123391509056091, -0.4094350337982178], "state": 6, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "ShootAtCommand", "position": [68.28890991210938, 25.360763549804688], "visibleEnemies": []}}, "Red1": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red1", "facingDirection": [-0.9972056150436401, 0.07470673322677612], "state": 4, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "AttackCommand", "position": [68.53483581542969, 25.27260398864746], "visibleEnemies": []}}, "Red0": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Red0", "facingDirection": [0.9994280338287354, -0.033820152282714844], "state": 6, "health": 0, "seenlast": 13.370665550231934, "team": "Red", "currentAction": "ShootAtCommand", "position": [34.46906280517578, 24.155515670776367], "visibleEnemies": []}}, "Red4": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red4", "facingDirection": [0.912505030632019, -0.4090656042098999], "state": 6, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "ShootAtCommand", "position": [68.30572509765625, 25.36515998840332], "visibleEnemies": []}}, "Blue1": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": "RedFlag", "name": "Blue1", "facingDirection": [0.9242773652076721, -0.3817223310470581], "state": 3, "health": 100.0, "seenlast": null, "team": "Blue", "currentAction": "MoveCommand", "position": [9.723822593688965, 28.638526916503906], "visibleEnemies": []}}, "Blue0": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue0", "facingDirection": [-0.9890086054801941, 0.14785832166671753], "state": 1, "health": 100.0, "seenlast": null, "team": "Blue", "currentAction": null, "position": [81.625, 19.375], "visibleEnemies": ["Red2", "Red1", "Red4"]}}, "Blue3": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue3", "facingDirection": [-0.9994280338287354, 0.03381979465484619], "state": 1, "health": 0, "seenlast": null, "team": "Blue", "currentAction": null, "position": [48.790069580078125, 23.665205001831055], "visibleEnemies": []}}, "Blue2": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue2", "facingDirection": [-0.9112738966941833, 0.411800742149353], "state": 6, "health": 0, "seenlast": null, "team": "Blue", "currentAction": "ShootAtCommand", "position": [57.94633102416992, 32.63374710083008], "visibleEnemies": []}}, "Blue4": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue4", "facingDirection": [-0.9575538635253906, 0.2882544994354248], "state": 6, "health": 0, "seenlast": null, "team": "Blue", "currentAction": "ShootAtCommand", "position": [47.545501708984375, 19.977867126464844], "visibleEnemies": []}}}, "match": {"__class__": "MatchInfo", "__value__": {"timeRemaining": 148.42462158203125, "timeToNextRespawn": 13.427755355834961, "combatEvents": [{"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue3", "time": 14.939663887023926, "type": 1, "subject": "Red3"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red2", "time": 16.550338745117188, "type": 1, "subject": "Blue2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red4", "time": 16.550338745117188, "type": 1, "subject": "Blue2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red0", "time": 17.310344696044922, "type": 1, "subject": "Blue4"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue3", "time": 18.036685943603516, "type": 1, "subject": "Red0"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red1", "time": 18.201021194458008, "type": 1, "subject": "Blue3"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 28.15752601623535, "type": 1, "subject": "Red4"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue1", "time": 28.15752601623535, "type": 2, "subject": "RedFlag"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 28.616199493408203, "type": 1, "subject": "Red2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 29.308876037597656, "type": 1, "subject": "Red1"}}], "timePassed": 31.5719051361084, "scores": {"Blue": 0, "Red": 0}}}}}]=]
--- local t = json.text_to_table(json_text)
+-- local json = [=[{"__class__": "GameInfo", "__value__": {"teams": {"Blue": {"__class__": "TeamInfo", "__value__": {"flagScoreLocation": [82.0, 20.0], "name": "Blue", "flagSpawnLocation": [82.0, 20.0], "flag": "BlueFlag", "members": ["Blue0", "Blue1", "Blue2", "Blue3", "Blue4"], "botSpawnArea": [[79.0, 2.0], [85.0, 9.0]]}}, "Red": {"__class__": "TeamInfo", "__value__": {"flagScoreLocation": [6.0, 30.0], "name": "Red", "flagSpawnLocation": [6.0, 30.0], "flag": "RedFlag", "members": ["Red0", "Red1", "Red2", "Red3", "Red4"], "botSpawnArea": [[3.0, 41.0], [9.0, 48.0]]}}}, "flags": {"BlueFlag": {"__class__": "FlagInfo", "__value__": {"position": [82.0, 20.0], "carrier": null, "name": "BlueFlag", "respawnTimer": -7.450580596923828e-09, "team": "Blue"}}, "RedFlag": {"__class__": "FlagInfo", "__value__": {"position": [9.723822593688965, 28.638526916503906], "carrier": "Blue1", "name": "RedFlag", "respawnTimer": -7.450580596923828e-09, "team": "Red"}}}, "enemyTeam": "Red", "team": "Blue", "bots": {"Red3": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Red3", "facingDirection": [0.9375345706939697, -0.3478919267654419], "state": 6, "health": 0, "seenlast": 13.370665550231934, "team": "Red", "currentAction": "ShootAtCommand", "position": [35.6309928894043, 26.81215476989746], "visibleEnemies": []}}, "Red2": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red2", "facingDirection": [0.9123391509056091, -0.4094350337982178], "state": 6, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "ShootAtCommand", "position": [68.28890991210938, 25.360763549804688], "visibleEnemies": []}}, "Red1": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red1", "facingDirection": [-0.9972056150436401, 0.07470673322677612], "state": 4, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "AttackCommand", "position": [68.53483581542969, 25.27260398864746], "visibleEnemies": []}}, "Red0": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Red0", "facingDirection": [0.9994280338287354, -0.033820152282714844], "state": 6, "health": 0, "seenlast": 13.370665550231934, "team": "Red", "currentAction": "ShootAtCommand", "position": [34.46906280517578, 24.155515670776367], "visibleEnemies": []}}, "Red4": {"__class__": "BotInfo", "__value__": {"seenBy": ["Blue0"], "flag": null, "name": "Red4", "facingDirection": [0.912505030632019, -0.4090656042098999], "state": 6, "health": 0, "seenlast": 0.0, "team": "Red", "currentAction": "ShootAtCommand", "position": [68.30572509765625, 25.36515998840332], "visibleEnemies": []}}, "Blue1": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": "RedFlag", "name": "Blue1", "facingDirection": [0.9242773652076721, -0.3817223310470581], "state": 3, "health": 100.0, "seenlast": null, "team": "Blue", "currentAction": "MoveCommand", "position": [9.723822593688965, 28.638526916503906], "visibleEnemies": []}}, "Blue0": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue0", "facingDirection": [-0.9890086054801941, 0.14785832166671753], "state": 1, "health": 100.0, "seenlast": null, "team": "Blue", "currentAction": null, "position": [81.625, 19.375], "visibleEnemies": ["Red2", "Red1", "Red4"]}}, "Blue3": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue3", "facingDirection": [-0.9994280338287354, 0.03381979465484619], "state": 1, "health": 0, "seenlast": null, "team": "Blue", "currentAction": null, "position": [48.790069580078125, 23.665205001831055], "visibleEnemies": []}}, "Blue2": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue2", "facingDirection": [-0.9112738966941833, 0.411800742149353], "state": 6, "health": 0, "seenlast": null, "team": "Blue", "currentAction": "ShootAtCommand", "position": [57.94633102416992, 32.63374710083008], "visibleEnemies": []}}, "Blue4": {"__class__": "BotInfo", "__value__": {"seenBy": [], "flag": null, "name": "Blue4", "facingDirection": [-0.9575538635253906, 0.2882544994354248], "state": 6, "health": 0, "seenlast": null, "team": "Blue", "currentAction": "ShootAtCommand", "position": [47.545501708984375, 19.977867126464844], "visibleEnemies": []}}}, "match": {"__class__": "MatchInfo", "__value__": {"timeRemaining": 148.42462158203125, "timeToNextRespawn": 13.427755355834961, "combatEvents": [{"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue3", "time": 14.939663887023926, "type": 1, "subject": "Red3"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red2", "time": 16.550338745117188, "type": 1, "subject": "Blue2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red4", "time": 16.550338745117188, "type": 1, "subject": "Blue2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red0", "time": 17.310344696044922, "type": 1, "subject": "Blue4"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue3", "time": 18.036685943603516, "type": 1, "subject": "Red0"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Red1", "time": 18.201021194458008, "type": 1, "subject": "Blue3"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 28.15752601623535, "type": 1, "subject": "Red4"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue1", "time": 28.15752601623535, "type": 2, "subject": "RedFlag"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 28.616199493408203, "type": 1, "subject": "Red2"}}, {"__class__": "MatchCombatEvent", "__value__": {"instigator": "Blue0", "time": 29.308876037597656, "type": 1, "subject": "Red1"}}], "timePassed": 31.5719051361084, "scores": {"Blue": 0, "Red": 0}}}}}]=]
+-- local t = JSON.json_to_table(json)
 
-function json.encode(_name_or_class, _object, ...)
-	return json.table_to_text(json.object_to_table(_name_or_class, _object, ...))
+function JSON.encode(_name_or_class, _object, ...)
+	return JSON.table_to_json(JSON.object_to_table(_name_or_class, _object, ...))
 end
-function json.decode(_name_or_class, _text, ...)
-	return json.table_to_object(_name_or_class, json.text_to_table(_text), ...)
+function JSON.decode(_name_or_class, _json, ...)
+	return JSON.table_to_object(_name_or_class, JSON.json_to_table(_json), ...)
 end
 
 ----------------------------------------------------------------------
 -- Handshaking
 
 require "Handshaking"
-json.register(
+JSON.register(
 		ConnectServer,
 		"ConnectServer",
 		function(_object)
@@ -141,7 +141,7 @@ json.register(
 			return ConnectServer(_table.protocolVersion)
 		end
 	)
-json.register(
+JSON.register(
 		ConnectClient,
 		"ConnectClient",
 		function(_object)
@@ -159,7 +159,7 @@ json.register(
 -- GameInfo
 
 require "GameInfo"
-json.register(
+JSON.register(
 		LevelInfo,
 		"LevelInfo",
 		function(_object)
@@ -199,26 +199,26 @@ json.register(
 			}
 		end
 	)
-json.register(
+JSON.register(
 		GameInfo,
 		"GameInfo",
 		function(_object)
 			return {
-				teams = json.parse_map(json.object_to_table, "TeamInfo", _object.teams),
+				teams = JSON.parse_map(JSON.object_to_table, "TeamInfo", _object.teams),
 				team = _object.team.name,
 				enemyTeam = _object.enemyTeam.name,
-				flags = json.parse_map(json.object_to_table, "FlagInfo", _object.flags),
-				bots = json.parse_map(json.object_to_table, "BotInfo", _object.bots),
-				match = json.object_to_table("MatchInfo", _object.match),
+				flags = JSON.parse_map(JSON.object_to_table, "FlagInfo", _object.flags),
+				bots = JSON.parse_map(JSON.object_to_table, "BotInfo", _object.bots),
+				match = JSON.object_to_table("MatchInfo", _object.match),
 			}
 		end,
 		function(_table)
 			local params = {}
-			params.bots = json.parse_map(json.table_to_object, "BotInfo", _table.bots)
-			params.teams = json.parse_map(json.table_to_object, "TeamInfo", _table.teams, params)
+			params.bots = JSON.parse_map(JSON.table_to_object, "BotInfo", _table.bots)
+			params.teams = JSON.parse_map(JSON.table_to_object, "TeamInfo", _table.teams, params)
 			params.team = assert(params.teams[_table.team])
 			params.enemyTeam = assert(params.teams[_table.enemyTeam])
-			params.flags = json.parse_map(json.table_to_object, "FlagInfo", _table.flags, params)
+			params.flags = JSON.parse_map(JSON.table_to_object, "FlagInfo", _table.flags, params)
 			for name, team in pairs(params.teams) do
 				team.flag = params.flags[team.flag]
 			end
@@ -232,18 +232,18 @@ json.register(
 					bot.seenBy[index] = params.bots[name]
 				end
 			end
-			params.match = json.table_to_object("MatchInfo", _table.match, params)
+			params.match = JSON.table_to_object("MatchInfo", _table.match, params)
 			return GameInfo(params)
 		end
 	)
-json.register(
+JSON.register(
 		TeamInfo,
 		"TeamInfo",
 		function(_object)
 			return {
 				name = _object.name,
 				members = _object.members, -- TODO: array of names
-				flag = _object.flag and _object.flag.name or json.null,
+				flag = _object.flag and _object.flag.name or JSON.null,
 				flagSpawnLocation = _object.flagSpawnLocation,
 				flagScoreLocation = _object.flagScoreLocation,
 				botSpawnArea = _object.botSpawnArea,
@@ -264,7 +264,7 @@ json.register(
 			return TeamInfo(params)
 		end
 	)
-json.register(
+JSON.register(
 		FlagInfo,
 		"FlagInfo",
 		function(_object)
@@ -272,7 +272,7 @@ json.register(
 				name = _object.name,
 				team = _object.team.name,
 				position = _object.position,
-				carrier = _object.carrier and _object.carrier.name or json.null,
+				carrier = _object.carrier and _object.carrier.name or JSON.null,
 				respawnTimer = _object.respawnTimer,
 			}
 		end,
@@ -281,12 +281,12 @@ json.register(
 				name = _table.name,
 				team = assert(_params.teams[_table.team]),
 				position = _table.position,
-				carrier = _table.carrier and assert(_params.bots[_table.carrier], tostring(_table.carrier) .. "bot not found") or json.null,
+				carrier = _table.carrier and assert(_params.bots[_table.carrier], tostring(_table.carrier) .. "bot not found") or JSON.null,
 				respawnTimer = _table.respawnTimer,
 			}
 		end
 	)
-json.register(
+JSON.register(
 		BotInfo,
 		"BotInfo",
 		function(_object)
@@ -298,7 +298,7 @@ json.register(
 				position = _object.position,
 				facingDirection = _object.facingDirection,
 				seenlast = _object.seenlast,
-				flag = _object.flag and _object.flag.name or json.null,
+				flag = _object.flag and _object.flag.name or JSON.null,
 				visibleEnemies = _object.visibleEnemies, -- TODO: array of names
 				seenBy = _object.seenBy, -- TODO: array of names
 			}
@@ -318,32 +318,32 @@ json.register(
 			}
 		end
 	)
-json.register(
+JSON.register(
 		MatchInfo,
 		"MatchInfo",
 		function(_object)
 			return {
 				timeRemaining = _object.timeRemaining,
 				timeToNextRespawn = _object.timeToNextRespawn,
-				combatEvents = json.parse_map(json.object_to_table, "MatchCombatEvent", _object.combatEvents),
+				combatEvents = JSON.parse_map(JSON.object_to_table, "MatchCombatEvent", _object.combatEvents),
 			}
 		end,
 		function(_table, _params)
 			return MatchInfo{
 				timeRemaining = _table.timeRemaining,
 				timeToNextRespawn = _table.timeToNextRespawn,
-				combatEvents = json.parse_map(json.table_to_object, "MatchCombatEvent", _table.combatEvents, _params),
+				combatEvents = JSON.parse_map(JSON.table_to_object, "MatchCombatEvent", _table.combatEvents, _params),
 			}
 		end
 	)
-json.register(
+JSON.register(
 		MatchCombatEvent,
 		"MatchCombatEvent",
 		function(_object)
 			return {
 				type = _object.type,
 				time = _object.time,
-				instigator = _object.instigator and _object.instigator.name or json.null,
+				instigator = _object.instigator and _object.instigator.name or JSON.null,
 				subject = _object.subject.name,
 			}
 		end,
@@ -353,7 +353,7 @@ json.register(
 			local params = {
 				type = _table.type,
 				time = _table.time,
-				instigator = _table.instigator and _params.bots[_table.instigator] or json.null,
+				instigator = _table.instigator and _params.bots[_table.instigator] or JSON.null,
 			}
 			if bot_subject[_table.type] then
 				params.subject = _params.bots[_table.subject]
@@ -370,7 +370,7 @@ json.register(
 -- Commands
 
 require "Commands"
-json.register(
+JSON.register(
 		DefendCommand,
 		"Defend",
 		function(_object)
@@ -384,7 +384,7 @@ json.register(
 			return DefendCommand(_table.bot, { facingDirection = _table.facingDirection }, _table.description)
 		end
 	)
-json.register(
+JSON.register(
 		MoveCommand,
 		"Move",
 		function(_object)
@@ -398,14 +398,14 @@ json.register(
 			return MoveCommand(_table.bot, { target_list = _table.target }, _table.description)
 		end
 	)
-json.register(
+JSON.register(
 		AttackCommand,
 		"Attack",
 		function(_object)
 			return {
 				bot = _object.botId,
 				target = _object.target,
-				lookAt = _object.lookAt or json.null,
+				lookAt = _object.lookAt or JSON.null,
 				description = _object.description,
 			}
 		end,
@@ -413,7 +413,7 @@ json.register(
 			return AttackCommand(_table.bot, { target_list = _table.target, lookAt = _table.lookAt }, _table.description)
 		end
 	)
-json.register(
+JSON.register(
 		ChargeCommand,
 		"Charge",
 		function(_object)

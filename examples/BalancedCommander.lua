@@ -1,13 +1,8 @@
-#include <string>
-#include <boost/none.hpp>
 
-#include "../api/Commands.h"
-#include "../api/Commander.h"
-#include "../api/CommanderFactory.h"
-#include "../api/GameInfo.h"
+local BalancedCommander = class(Commander)
 
-using namespace std;
-
+error("TODO: BalancedCommander")
+--[[
 class BalancedCommander : public Commander
 {
 public:
@@ -152,4 +147,6 @@ Vector2 BalancedCommander::getFlankingPosition( BotInfo* bot, Vector2 target )
     }
     return bestOption;
 }
+]]
 
+return BalancedCommander

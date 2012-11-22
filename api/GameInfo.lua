@@ -12,7 +12,19 @@ function LevelInfo:new(_table)
     self.width = _table.width                                          -- The width of the game world
     self.height = _table.height                                        -- The height of the game world
     self.blockHeights = _table.blockHeights                            -- A 2D table showing the height of the block at each position in the world
-                                                                       -- indexing is based on [y][x]
+                                                                       -- indexing is based on [x + 1][y + 1]
+	setmetatable(self.blockHeights, { __call = function(self, _x, _y)  -- Coordinates are from {0, 0} to {width - 1, height - 1}
+		if _y == nil and type(_x) == "table" then
+			_x, _y = _x[1], _x[2]
+		end
+		local ix, iy = math.floor(_x) + 1, math.floor(_y) + 1
+		local col = self[ix]
+		if col == nil then
+			return -1
+		end
+		return col[iy] or -1
+	end })
+	
     assert(_table.teamNames and _table.flagSpawnLocations and _table.flagScoreLocations and _table.botSpawnAreas)
     self.teamNames = _table.teamNames                                  -- A list of the team names supported by this level.
     self.flagSpawnLocations = _table.flagSpawnLocations                -- The map of team name the spawn location of the team's flag
@@ -29,10 +41,6 @@ function LevelInfo:new(_table)
     self.initializationTime = _table.initializationTime                -- The time (seconds) allowed to the commanders for initialization
 end
 
-function LevelInfo:getBlockHeight(_x, _y)
-    return self.blockHeights[_y][_x]
-end
-
 function LevelInfo:findRandomFreePositionInBox(_min, _max)
     -- Find a random position for a character to move to in an area.
     -- nil is returned if no position could be found.
@@ -44,29 +52,30 @@ function LevelInfo:findRandomFreePositionInBox(_min, _max)
         return
     end
 
+	local blocks = self.blockHeights
+	local characterRadius = self.characterRadius
+	
     for i = 0, 99 do
         local x = math.random() * rangeX + minX
         local y = math.random() * rangeY + minY
+		assert(blocks(x, y) >= 0, string.format("no block with coordinate [x = %d, y = %d] (width = %d, height = %d) (#width = %d, #height = %d)", x, y, self.width, self.height, #blocks, #blocks[1]))
         local ix, iy = math.floor(x), math.floor(y)
-
-        local blocks = self.blockHeights
-        local characterRadius = self.characterRadius
 
         local valid = true
         -- check if there are any blocks under current position
-        valid = valid and (blocks[iy][ix] == 0)
+        valid = valid and (blocks(ix, iy) == 0)
         
         -- check if there are any blocks in the four cardinal directions
-        valid = valid and ((x - ix) < characterRadius and ix > 0 and blocks[iy][ix - 1] > 0)
-        valid = valid and ((ix + 1 - x) < characterRadius and ix < width - 1 and blocks[iy][ix + 1] > 0)
-        valid = valid and ((y - iy) < characterRadius and iy > 0 and blocks[iy - 1][ix] > 0)
-        valid = valid and ((iy + 1 - y) < characterRadius and iy < height - 1 and blocks[iy + 1][ix] > 0)
+        valid = valid and ((x - ix) < characterRadius and ix > 0 and blocks(ix - 1, iy) > 0)
+        valid = valid and ((ix + 1 - x) < characterRadius and ix < width - 1 and blocks(ix + 1, iy) > 0)
+        valid = valid and ((y - iy) < characterRadius and iy > 0 and blocks(ix, iy - 1) > 0)
+        valid = valid and ((iy + 1 - y) < characterRadius and iy < height - 1 and blocks(ix, iy + 1) > 0)
 
         -- check if there are any blocks in the four diagonals
-        valid = valid and ((x - ix) < characterRadius and (y - iy) < characterRadius and ix > 0 and iy > 0 and blocks[iy - 1][ix - 1] > 0)
-        valid = valid and ((ix + 1 - x) < characterRadius and (y - iy) < characterRadius and ix < width - 1 and iy > 0 and blocks[iy - 1][ix + 1] > 0)
-        valid = valid and ((x - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix > 0 and iy < height - 1 and blocks[iy + 1][ix - 1] > 0)
-        valid = valid and ((x + 1 - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix < width - 1 and iy < height - 1 and blocks[iy + 1][ix + 1] > 0)
+        valid = valid and ((x - ix) < characterRadius and (y - iy) < characterRadius and ix > 0 and iy > 0 and blocks(ix - 1, iy - 1) > 0)
+        valid = valid and ((ix + 1 - x) < characterRadius and (y - iy) < characterRadius and ix < self.width - 1 and iy > 0 and blocks(ix + 1, iy - 1) > 0)
+        valid = valid and ((x - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix > 0 and iy < self.height - 1 and blocks(ix - 1, iy + 1) > 0)
+        valid = valid and ((x + 1 - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix < self.width - 1 and iy < self.height - 1 and blocks(ix + 1, iy + 1) > 0)
 
         if valid then
             return { x, y }
@@ -103,9 +112,22 @@ function GameInfo:new(_table)
     self.flags = _table.flags                                          -- Map of flag name to BotInfo
 
     -- updated by the client wrapper before commander tick
-    -- self.bots_alive = {}                                         -- List of bots in the commander's team that are alive
-    -- self.bots_available = {}                                     -- List of bots in the commander's team that are alive and idle
-    -- self.enemyFlags = {}                                         -- List of flags that don't belong to this commander's team
+	self.bots_alive = {}                                         		-- List of bots in the commander's team that are alive
+	self.bots_available = {}                                     		-- List of bots in the commander's team that are alive and idle
+	for _, bot in ipairs(self.team.members) do
+		if bot.health > 0 then
+			table.insert(self.bots_alive, bot)
+			if bot.state == BotInfo.STATE_IDLE then
+				table.insert(self.bots_available, bot)
+			end
+		end
+	end
+	self.enemyFlags = {}                                         		-- List of flags that don't belong to this commander's team
+	for name, team in pairs(self.teams) do
+		if team ~= self.team then
+			table.insert(self.enemyFlags, team.flag)
+		end
+	end
 end
 
 ----------------------------------------------------------------------

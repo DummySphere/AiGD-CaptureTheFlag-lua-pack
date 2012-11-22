@@ -1,13 +1,8 @@
-#include <string>
-#include <boost/none.hpp>
 
-#include "../api/GameInfo.h"
-#include "../api/Commands.h"
-#include "../api/Commander.h"
-#include "../api/CommanderFactory.h"
+local GreedyCommander = class(Commander)
 
-using namespace std;
-
+error("TODO: GreedyCommander")
+--[[
 class GreedyCommander : public Commander
 {
 public:
@@ -97,4 +92,6 @@ void GreedyCommander::shutdown()
 {
     // do stuff in here after the game finishes
 }
+]]
 
+return GreedyCommander

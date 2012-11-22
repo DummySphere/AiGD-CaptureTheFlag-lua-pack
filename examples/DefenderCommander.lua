@@ -1,13 +1,5 @@
-#include <string>
-#include <boost/none.hpp>
-
-#include "../api/GameInfo.h"
-#include "../api/Commands.h"
-#include "../api/Commander.h"
-#include "../api/CommanderFactory.h"
-
-using namespace std;
-
+error("TODO: DefenderCommander")
+--[[
 class DefenderCommander : public Commander
 {
 public:
@@ -105,4 +97,6 @@ void DefenderCommander::shutdown()
 {
     // do stuff in here after the m_game finishes
 }
+]]
 
+return DefenderCommander
