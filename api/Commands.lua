@@ -17,13 +17,27 @@ end
 
 DefendCommand = class(Command)
 
+DefendCommand.FacingDirection = class()
+function DefendCommand.FacingDirection:new(_direction, _time)
+	self.direction = _direction
+	self.time = _time or 0
+end
+
 -- @param botId The bot being ordered.
--- @param facingDirection The facing direction of the bot.
+-- @param facingDirections The facing direction of the bot (can be a list of { direction, time }).
 -- @param description A description of the intention of the bot. This can be optional displayed in the gui next to the bot label.
 function DefendCommand:new(_botId, _params, _description)
 	Command.new(self, _botId, _description)
-	assert(_params.facingDirection ~= nil)
-	self.facingDirection = _params.facingDirection
+	if _params and _params.facingDirection then
+		self.facingDirections = { DefendCommand.FacingDirection(_params.facingDirection) }
+	elseif _params and _params.facingDirection_list then
+		self.facingDirections = {}
+		for _, facingDirection in ipairs(_params.facingDirection_list) do
+			table.insert(self.facingDirections, facingDirection)
+		end
+	else
+		self.facingDirections = {}
+	end
 end
 
 ----------------------------------------------------------------------

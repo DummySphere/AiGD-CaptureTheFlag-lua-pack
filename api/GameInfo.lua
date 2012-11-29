@@ -1,5 +1,6 @@
 
 require "class"
+require "Vector2"
 
 ----------------------------------------------------------------------
 -- LevelInfo
@@ -14,7 +15,8 @@ function LevelInfo:new(_table)
     self.blockHeights = _table.blockHeights                            -- A 2D table showing the height of the block at each position in the world
                                                                        -- indexing is based on [x + 1][y + 1]
 	setmetatable(self.blockHeights, { __call = function(self, _x, _y)  -- Coordinates are from {0, 0} to {width - 1, height - 1}
-		if _y == nil and type(_x) == "table" then
+		if type(_x) == "table" then
+			assert(_y == nil)
 			_x, _y = _x[1], _x[2]
 		end
 		local ix, iy = math.floor(_x) + 1, math.floor(_y) + 1
@@ -48,7 +50,8 @@ function LevelInfo:findRandomFreePositionInBox(_min, _max)
     local maxX, maxY = math.min(math.max(0, _max[1]), self.width - 1), math.min(math.max(0, _max[2]), self.height - 1)
     local rangeX, rangeY = maxX - minX, maxY - minY
 
-    if (rangeX == 0.0) or (rangeY == 0.0) then
+    if rangeX == 0 or rangeY == 0 then
+		print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (rangeX = %d, rangeY = %d)", _min[1], _min[2], _max[1], _max[2], rangeX, rangeY))
         return
     end
 
@@ -81,6 +84,7 @@ function LevelInfo:findRandomFreePositionInBox(_min, _max)
             return { x, y }
         end
     end
+	print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (width = %d, height = %d)", _min[1], _min[2], _max[1], _max[2], self.width, self.height))
 end
 
 function LevelInfo:findNearestFreePosition(_position)
@@ -177,6 +181,7 @@ BotInfo.STATE_MOVING = 3
 BotInfo.STATE_ATTACKING = 4
 BotInfo.STATE_CHARGING = 5
 BotInfo.STATE_SHOOTING = 6
+BotInfo.STATE_TAKINGORDERS = 7
 
 function BotInfo:new(_table)
     self.name = _table.name                                            -- The name of the bot.
@@ -220,6 +225,8 @@ MatchCombatEvent.TYPE_KILLED = 1
 MatchCombatEvent.TYPE_FLAG_PICKEDUP = 2
 MatchCombatEvent.TYPE_FLAG_DROPPED = 3
 MatchCombatEvent.TYPE_FLAG_CAPTURED = 4
+MatchCombatEvent.TYPE_FLAG_RESTORED = 5
+MatchCombatEvent.TYPE_RESPAWN = 6
 
 function MatchCombatEvent:new(_table)
     self.type = _table.type                                            -- The type of the event
@@ -236,4 +243,6 @@ function MatchCombatEvent:new(_table)
                                                                        -- TYPE_FLAG_PICKEDUP: The flag that was picked up.
                                                                        -- TYPE_FLAG_DROPPED: The flag that was dropped.
                                                                        -- TYPE_FLAG_CAPTURED: The flag that was captured.
+                                                                       -- TYPE_FLAG_RESTORED: The flag that was restored.
+                                                                       -- TYPE_RESPAWN: The bot that was spawned.
 end

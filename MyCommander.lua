@@ -20,16 +20,20 @@ function MyCommander:tick()
     -- Here you can access all the information in self.level (information about the level being played)
     -- and self.game (information about the current game state).
     -- You can send commands to your bots using the issue member function
+    -- Warning: don't spam commands. It will probably not have the effect you want as bots 
+    -- pause their behavior each time they get a new command.
 
     local enemyFlag = self.game.enemyTeam.flag
     local enemyFlagPosition = enemyFlag.position
 	
-    local bots = self.game.team.members
-    for _, bot in ipairs(bots) do
-        if bot.health > 0.0 then
-            -- Tell all of the alive bots to attack the enemy flag
-            self:issue(AttackCommand(bot.name, { target = enemyFlagPosition }, "attack"))
-        end
+    for _, bot in ipairs(self.game.bots_available) do
+		local botPosition = bot.position
+		-- Tell all of the alive bots to attack the enemy flag
+		if Vector2.sqdistance(enemyFlagPosition, botPosition) > 1 then
+			self:issue(AttackCommand(bot.name, { target = enemyFlagPosition }, "attack"))
+		else
+			self:issue(DefendCommand(bot.name))
+		end
     end
 end
 

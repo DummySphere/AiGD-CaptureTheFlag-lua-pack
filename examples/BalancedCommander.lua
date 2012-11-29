@@ -5,148 +5,128 @@ error("TODO: BalancedCommander")
 --[[
 class BalancedCommander : public Commander
 {
-public:
-    virtual string getName() const;
-    virtual void initialize();
-    virtual void tick();
-    virtual void shutdown();
-
 private:
-    Vector2 getFlankingPosition(BotInfo* bot, Vector2 target);
+    Vector2 getFlankingPosition(BotInfo* bot, Vector2 target)
 
-    BotInfo *attacker;
-    BotInfo *defender;
-    Vector2 middle, left, right, front;
-};
+    BotInfo *attacker
+    BotInfo *defender
+    Vector2 middle, left, right, front
+end
 
-REGISTER_COMMANDER(BalancedCommander);
-
-
-string BalancedCommander::getName() const
-{
-    // change this to return the commander name
-    return "BalancedCommander";
-}
+REGISTER_COMMANDER(BalancedCommander)
 
 
-void BalancedCommander::initialize()
-{
-    // do stuff in here before the m_game starts
-    attacker = NULL;
-    defender = NULL;
-
-    // Calculate flag positions &&  store the middle->
-    Vector2 ours = m_game->team->flag->position;
-    Vector2 theirs = m_game->enemyTeam->flag->position;
-    middle = (theirs + ours) / 2.0f;
-
-    Vector2 d = (ours - theirs);    
-    left = Vector2(-d.y, d.x).normalisedCopy();
-    right = Vector2(d.y, -d.x).normalisedCopy();
-    front = Vector2(d.x, d.y).normalisedCopy();
-}
+function BalancedCommander:getName()
+    -- change this to return the commander name
+    return "BalancedCommander"
+end
 
 
-void BalancedCommander::tick()
-{
-    // the attacker is dead we"ll pick another when available
-    if(attacker && *attacker->health <= 0)
-        attacker = NULL;
+function BalancedCommander:initialize()
+    -- do stuff in here before the game starts
+    self.attacker = nil
+    self.defender = nil
 
-    // the defender is dead we"ll pick another when available
-    if( defender &&  (*defender->health <= 0 || defender->flag))
-        defender = NULL;
+    -- Calculate flag positions and  store the middle->
+    local ours = self.game.team.flag.position
+    local theirs = self.game.enemyTeam.flag.position
+    self.middle = (theirs + ours) / 2.0f
 
-    // In this example we loop through all living bots without orders (m_game->bots_available)
-    // All other bots will wander randomly
-    for (size_t i=0; i< m_game->bots_available.size(); ++i)
-    {
-        auto bot = m_game->bots_available[i];
-        if( (defender == NULL || defender == bot) &&  !bot->flag)
-        {
-            defender = bot;
+    local d = (ours - theirs)    
+    self.left = Vector2(-d.y, d.x).normalisedCopy()
+    self.right = Vector2(d.y, -d.x).normalisedCopy()
+    self.front = Vector2(d.x, d.y).normalisedCopy()
+end
 
-            // Stand on a random position in a box of 4m around the flag->
-            Vector2 targetPosition = m_game->team->flagScoreLocation;
-            Vector2 targetMin = targetPosition - Vector2(2.0f, 2.0f);
-            Vector2 targetMax = targetPosition + Vector2(2.0f, 2.0f);
-            Vector2 goal = targetPosition;
-            m_level->findRandomFreePositionInBox(goal, targetMin, targetMax);
 
-            if( (goal - *bot->position).length() > 8.0f)
-                issue(new ChargeCommand(defender->name, goal, "running to defend"));
+function BalancedCommander:tick()
+    -- the attacker is dead we"ll pick another when available
+    if(self.attacker and *self.attacker.health <= 0)
+        self.attacker = nil
+
+    -- the defender is dead we"ll pick another when available
+    if( self.defender and  (*self.defender.health <= 0 or self.defender.flag))
+        self.defender = nil
+
+    -- In this example we loop through all living bots without orders (self.game.bots_available)
+    -- All other bots will wander randomly
+    for (size_t i=0; i< self.game.bots_available.size(); ++i)
+        local bot = self.game.bots_available[i]
+        if( (self.defender == nil or self.defender == bot) and  not bot.flag)
+            self.defender = bot
+
+            -- Stand on a random position in a box of 4m around the flag->
+            local targetPosition = self.game.team.flagScoreLocation
+            local targetMin = targetPosition - Vector2(2.0f, 2.0f)
+            local targetMax = targetPosition + Vector2(2.0f, 2.0f)
+            local goal = targetPosition
+            self.level.findRandomFreePositionInBox(goal, targetMin, targetMax)
+
+            if( (goal - *bot.position).length() > 8.0f)
+                self:issue(ChargeCommand(self.defender.name, goal, "running to defend"))
             else
-                issue(new DefendCommand(defender->name, (middle - *bot->position), "turning to defend"));
-        }
-        else if (attacker == NULL || attacker == bot || bot->flag)
-        {
-            // Our attacking bot
-            attacker = bot;
-            if( bot->flag)
-            {
-                // Tell the flag carrier to run home!
-                Vector2 target = m_game->team->flagScoreLocation;
-                issue(new MoveCommand(bot->name, target, "running home"));
-            }
+                self:issue(DefendCommand(self.defender.name, (self.middle - *bot.position), "turning to defend"))
+			end
+        else if (self.attacker == nil or self.attacker == bot or bot.flag)
+            -- Our attacking bot
+            self.attacker = bot
+            if( bot.flag)
+                -- Tell the flag carrier to run home!
+                local target = self.game.team.flagScoreLocation
+                self:issue(MoveCommand(bot.name, target, "running home"))
             else
-            {
-                Vector2 target = m_game->enemyTeam->flag->position;
-                Vector2 flank = getFlankingPosition(bot, target);
-                if( (target - flank).length() > (*bot->position - target).length())
-                    issue(new AttackCommand(bot->name, target, target, "attack from flank"));
+                local target = self.game.enemyTeam.flag.position
+                local flank = getFlankingPosition(bot, target)
+                if( (target - flank).length() > (*bot.position - target).length())
+                    self:issue(AttackCommand(bot.name, target, target, "attack from flank"))
                 else
-                {
-                    m_level->findNearestFreePosition(flank, flank);
-                    issue(new MoveCommand(bot->name, flank, "running to flank"));
-                }
-            }
-        }
+                    self.level.findNearestFreePosition(flank, flank)
+                    self:issue(MoveCommand(bot.name, flank, "running to flank"))
+                end
+            end
         else
-        {
-            // All our other (random) bots
+            -- All our other (random) bots
 
-            // pick a random position in the m_level to move to                               
-            int minSide = min(m_level->width, m_level->height);
-            Vector2 box = Vector2((float)minSide,(float)minSide);
-            Vector2 target;
+            -- pick a random position in the level to move to                               
+            local minSide = min(self.level.width, self.level.height)
+            local box = Vector2((float)minSide,(float)minSide)
+            local target
 
-            // issue the order
-            if(m_level->findRandomFreePositionInBox(target, middle + box * 0.4f, middle - box * 0.4f))
-                issue(new AttackCommand(bot->name, target, boost::none,"random patrol"));
-        }
-    }
-}   
+            -- issue the order
+            if(self.level.findRandomFreePositionInBox(target, self.middle + box * 0.4f, self.middle - box * 0.4f))
+                self:issue(AttackCommand(bot.name, target, boost:none,"random patrol"))
+        end
+    end
+end   
 
 
-void BalancedCommander::shutdown()
-{
-    // do stuff in here after the game finishes
-}
+function BalancedCommander:shutdown()
+    -- do stuff in here after the game finishes
+end
 
-Vector2 BalancedCommander::getFlankingPosition( BotInfo* bot, Vector2 target )
-{
-    Vector2 flanks[]  =  {target + left*16.0f, target + right*16.0f};
-    vector<Vector2> options;
+function BalancedCommander:getFlankingPosition( BotInfo* bot, Vector2 target )
+    local flanks[]  =  {target + self.left*16.0f, target + self.right*16.0fend
+    local options
     for(int i=0; i<2; ++i)
     {
-        Vector2 val;
-        if(m_level->findNearestFreePosition(val, flanks[i]))
-            options.push_back(val);
-    }
+        local val
+        if(self.level.findNearestFreePosition(val, flanks[i]))
+            options.push_back(val)
+    end
 
-    float bestDist = FLT_MAX;
-    Vector2 bestOption = target;
+    local bestDist = FLT_MAX
+    local bestOption = target
     for (size_t i=0; i<options.size(); ++i)
     {
-        float dist = (options[i]-*bot->position).length();
+        local dist = (options[i]-*bot.position).length()
         if(dist < bestDist)
         {
-            bestDist = dist;
-            bestOption = options[i];
-        }
-    }
-    return bestOption;
-}
+            bestDist = dist
+            bestOption = options[i]
+        end
+    end
+    return bestOption
+end
 ]]
 
 return BalancedCommander

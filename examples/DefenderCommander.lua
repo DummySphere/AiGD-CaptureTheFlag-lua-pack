@@ -1,102 +1,74 @@
-error("TODO: DefenderCommander")
---[[
-class DefenderCommander : public Commander
-{
-public:
-    virtual string getName() const;
-    virtual void initialize();
-    virtual void tick();
-    virtual void shutdown();
 
-private:
-    BotInfo *attacker;
-};
+local DefenderCommander = class(Commander)
 
-REGISTER_COMMANDER(DefenderCommander);
+function DefenderCommander:new(...)
+	Commander.new(self, ...)
+	-- Custom constructor here
+end
+
+function DefenderCommander:getName()
+    -- Change this to return the commander name
+    return "DefenderCommander"
+end
 
 
-string DefenderCommander::getName() const
-{
-    // change this to return the commander name
-    return "DefenderCommander";
-}
+function DefenderCommander:initialize()
+    -- Do stuff in here before the m_game starts
+    self.attacker = nil
+end
 
 
-void DefenderCommander::initialize()
-{
-    // do stuff in here before the m_game starts
-    attacker = NULL;
-}
+function DefenderCommander:tick()
+    -- TODO: When defender is down to the last bot that"s attacking the flag, it"ll end up ordering
+    -- the attacker to run all the way back from the flag to defend!
+    if self.attacker and self.attacker.health <= 0 then
+        self.attacker = nil
+	end
 
-
-void DefenderCommander::tick()
-{
-    // TODO: When defender is down to the last bot that"s attacking the flag, it"ll end up ordering
-    // the attacker to run all the way back from the flag to defend!
-    if (attacker && *attacker->health <= 0)
-        attacker = NULL;
-
-    for (size_t i=0; i<m_game->bots_available.size(); ++i)
-    {
-        auto bot = m_game->bots_available[i];
-        if ((!attacker || attacker == bot) && m_game->bots_available.size() > 1)
-        {
-            if(bot->flag)
-            {
-                //bring it hooome
-                auto targetLocation = m_game->team->flagScoreLocation;
-                issue(new ChargeCommand(bot->name, targetLocation, "returning enemy flag!"));
-            }
+	for _, bot in ipairs(self.game.bots_available) do
+        if (not self.attacker or self.attacker == bot) and #self.game.bots_available > 1 then
+            if bot.flag then
+                --bring it hooome
+                self:issue(ChargeCommand(bot.name, { target = self.game.team.flagScoreLocation }, "returning enemy flag!"))
             else
-            {
-                // find the closest flag that isn"t ours
-                auto enemyFlagLocation = m_game->enemyTeam->flag->position;
-                issue(new ChargeCommand(bot->name, enemyFlagLocation, "getting enemy flag!"));
-            }
-            attacker = bot;
-        }
+                -- find the closest flag that isn't ours
+                self:issue(ChargeCommand(bot.name, { target = self.game.enemyTeam.flag.position }, "getting enemy flag!"))
+            end
+            self.attacker = bot
         else
-        {
-            if (attacker == bot)
-                attacker = NULL;
+            if self.attacker == bot then
+				self.attacker = nil
+			end
 
-            // defend the flag!
-            Vector2 targetPosition = m_game->team->flagScoreLocation;
-            Vector2 targetMin = targetPosition - Vector2(8.0f, 8.0f);
-            Vector2 targetMax = targetPosition + Vector2(8.0f, 8.0f);
-            if(bot->flag)
-            {
-                //bring it hooome
-                auto targetLocation = m_game->team->flagScoreLocation;
-                issue(new ChargeCommand(bot->name, targetLocation, "returning enemy flag!"));
-            }
-            else if(bot->position)
-            {
-                if ((targetPosition - *bot->position).length() > 9.0f &&  (targetPosition - *bot->position).length() > 3.0f)
-                {
-                    bool found = false;
-                    while(!found)
-                    {
-                        Vector2 position = targetPosition;
-                        if(m_level->findRandomFreePositionInBox(position, targetMin,targetMax) && (targetPosition - position).length() > 3.0f)
-                        {
-                            issue(new MoveCommand(bot->name, position, "defending around flag"));
-                            found = true;
-                        }
-                    }
-                }
+            -- defend the flag!
+            local targetPosition = self.game.team.flagScoreLocation
+			local areaRadius = 8
+            local targetMin = Vector2.sub(targetPosition, { areaRadius, areaRadius })
+            local targetMax = Vector2.add(targetPosition, { areaRadius, areaRadius })
+            if bot.flag then
+                --bring it hooome
+                self:issue(ChargeCommand(bot.name, { target = self.game.team.flagScoreLocation }, "returning enemy flag!"))
+            elseif bot.position then
+				local dist = Vector2.distance(bot.position, targetPosition)
+                if dist > 9 and dist > 3 then
+                    for i = 1, 100 do
+                        local position = self.level:findRandomFreePositionInBox(targetMin, targetMax) -- or targetPosition
+                        if position and Vector2.distance(position, targetPosition) > 3 then
+                            self:issue(MoveCommand(bot.name, position, "defending around flag"))
+                            break
+                        end
+                    end
                 else 
-                    issue(new DefendCommand(bot->name, (targetPosition - *bot->position), "defending facing flag"));
-            }
-        }
-    }
-}
+                    self:issue(DefendCommand(bot.name, Vector2.sub(targetPosition, bot.position), "defending facing flag"))
+				end
+            end
+        end
+    end
+end
 
 
-void DefenderCommander::shutdown()
-{
-    // do stuff in here after the m_game finishes
-}
-]]
+function DefenderCommander:shutdown()
+    -- do stuff in here after the game finishes
+end
 
 return DefenderCommander

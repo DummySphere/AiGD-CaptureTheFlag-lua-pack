@@ -12,7 +12,7 @@ function RandomCommander:getName()
 end
 
 function RandomCommander:initialize()
-	-- do stuff in here before the game starts
+	-- Do stuff in here before the game starts
 end
 
 function RandomCommander:tick()
@@ -42,7 +42,7 @@ function RandomCommander:tick()
 end
 
 function RandomCommander:shutdown()
-	-- do stuff in here after the game finishes
+	-- Do stuff in here after the game finishes
 end
 
 return RandomCommander

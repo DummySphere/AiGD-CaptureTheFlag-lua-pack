@@ -6,7 +6,7 @@ require "class"
 
 ConnectServer = class()
 
-ConnectServer.expectedProtocolVersion = "1.1"
+ConnectServer.expectedProtocolVersion = "1.2"
 
 function ConnectServer:new(_protocolVersion)
     self.protocolVersion = _protocolVersion

@@ -348,8 +348,8 @@ JSON.register(
 			}
 		end,
 		function(_table, _params)
-			local bot_subject = { [MatchCombatEvent.TYPE_KILLED] = true }
-			local flag_subject = { [MatchCombatEvent.TYPE_FLAG_PICKEDUP] = true, [MatchCombatEvent.TYPE_FLAG_DROPPED] = true, [MatchCombatEvent.TYPE_FLAG_CAPTURED] = true }
+			local bot_subject = { [MatchCombatEvent.TYPE_KILLED] = true, [MatchCombatEvent.TYPE_RESPAWN] = true }
+			local flag_subject = { [MatchCombatEvent.TYPE_FLAG_PICKEDUP] = true, [MatchCombatEvent.TYPE_FLAG_DROPPED] = true, [MatchCombatEvent.TYPE_FLAG_CAPTURED] = true, [MatchCombatEvent.TYPE_FLAG_RESTORED] = true }
 			local params = {
 				type = _table.type,
 				time = _table.time,
@@ -374,14 +374,16 @@ JSON.register(
 		DefendCommand,
 		"Defend",
 		function(_object)
+			local facingDirections = _object.facingDirections and JSON.parse_map(function(_name_or_class, value) return { value.direction, value.time } end, DefendCommand.FacingDirection, _object.facingDirections) or JSON.null
 			return {
 				bot = _object.botId,
-				facingDirection = _object.facingDirection,
+				facingDirections = facingDirections,
 				description = _object.description,
 			}
 		end,
 		function(_table)
-			return DefendCommand(_table.bot, { facingDirection = _table.facingDirection }, _table.description)
+			local facingDirection_list = _table.facingDirections and JSON.parse_map(function(_name_or_class, value) return DefendCommand.FacingDirection(unpack(value)) end, DefendCommand.FacingDirection, _table.facingDirections)
+			return DefendCommand(_table.bot, { facingDirection_list = facingDirection_list }, _table.description)
 		end
 	)
 JSON.register(

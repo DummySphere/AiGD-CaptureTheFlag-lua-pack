@@ -132,8 +132,7 @@ local shutdown = false
 while not shutdown do
 	local message = readline()
 	if message == "<tick>" then
-		local gameInfo = JSON.decode(GameInfo, readline())
-		
+		commander.game = JSON.decode(GameInfo, readline())
 		commander:tick()
 		
         for _, command in ipairs(commander.commands) do
