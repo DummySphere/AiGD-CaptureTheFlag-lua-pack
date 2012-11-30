@@ -41,7 +41,7 @@ function DefenderCommander:tick()
 			end
 
             -- defend the flag!
-            local targetPosition = self.game.team.flagScoreLocation
+            local targetPosition = self.game.team.flagSpawnLocation
 			local areaRadius = 8
             local targetMin = Vector2.sub(targetPosition, { areaRadius, areaRadius })
             local targetMax = Vector2.add(targetPosition, { areaRadius, areaRadius })
@@ -54,12 +54,12 @@ function DefenderCommander:tick()
                     for i = 1, 100 do
                         local position = self.level:findRandomFreePositionInBox(targetMin, targetMax) -- or targetPosition
                         if position and Vector2.distance(position, targetPosition) > 3 then
-                            self:issue(MoveCommand(bot.name, position, "defending around flag"))
+                            self:issue(MoveCommand(bot.name, { target = position }, "defending around flag"))
                             break
                         end
                     end
                 else 
-                    self:issue(DefendCommand(bot.name, Vector2.sub(targetPosition, bot.position), "defending facing flag"))
+                    self:issue(DefendCommand(bot.name, { facingDirection = Vector2.sub(targetPosition, bot.position) }, "defending facing flag"))
 				end
             end
         end

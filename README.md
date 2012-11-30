@@ -66,7 +66,6 @@ API
 ToDo
 ----
 
-* Known bug: there is an infinite loop in LevelInfo.findRandomFreePositionInBox when running examples.DefenderCommander
 * Convert examples.GreedyCommander and examples.BalancedComander to Lua
 * Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
 * Add Vector2 metatable
@@ -74,6 +73,11 @@ ToDo
 
 History
 -------
+
+### Next version
+
+* Fix function LevelInfo.findRandomFreePositionInBox
+* Fix commander examples.DefenderCommander
 
 ### Version 0.2 (2012-11-29)
 

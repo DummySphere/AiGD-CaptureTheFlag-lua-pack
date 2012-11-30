@@ -69,16 +69,16 @@ function LevelInfo:findRandomFreePositionInBox(_min, _max)
         valid = valid and (blocks(ix, iy) == 0)
         
         -- check if there are any blocks in the four cardinal directions
-        valid = valid and ((x - ix) < characterRadius and ix > 0 and blocks(ix - 1, iy) > 0)
-        valid = valid and ((ix + 1 - x) < characterRadius and ix < width - 1 and blocks(ix + 1, iy) > 0)
-        valid = valid and ((y - iy) < characterRadius and iy > 0 and blocks(ix, iy - 1) > 0)
-        valid = valid and ((iy + 1 - y) < characterRadius and iy < height - 1 and blocks(ix, iy + 1) > 0)
+        valid = valid and not ((x - ix) < characterRadius and ix > 0 and blocks(ix - 1, iy) > 0)
+        valid = valid and not ((ix + 1 - x) < characterRadius and ix < self.width - 1 and blocks(ix + 1, iy) > 0)
+        valid = valid and not ((y - iy) < characterRadius and iy > 0 and blocks(ix, iy - 1) > 0)
+        valid = valid and not ((iy + 1 - y) < characterRadius and iy < self.height - 1 and blocks(ix, iy + 1) > 0)
 
         -- check if there are any blocks in the four diagonals
-        valid = valid and ((x - ix) < characterRadius and (y - iy) < characterRadius and ix > 0 and iy > 0 and blocks(ix - 1, iy - 1) > 0)
-        valid = valid and ((ix + 1 - x) < characterRadius and (y - iy) < characterRadius and ix < self.width - 1 and iy > 0 and blocks(ix + 1, iy - 1) > 0)
-        valid = valid and ((x - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix > 0 and iy < self.height - 1 and blocks(ix - 1, iy + 1) > 0)
-        valid = valid and ((x + 1 - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix < self.width - 1 and iy < self.height - 1 and blocks(ix + 1, iy + 1) > 0)
+        valid = valid and not ((x - ix) < characterRadius and (y - iy) < characterRadius and ix > 0 and iy > 0 and blocks(ix - 1, iy - 1) > 0)
+        valid = valid and not ((ix + 1 - x) < characterRadius and (y - iy) < characterRadius and ix < self.width - 1 and iy > 0 and blocks(ix + 1, iy - 1) > 0)
+        valid = valid and not ((x - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix > 0 and iy < self.height - 1 and blocks(ix - 1, iy + 1) > 0)
+        valid = valid and not ((x + 1 - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix < self.width - 1 and iy < self.height - 1 and blocks(ix + 1, iy + 1) > 0)
 
         if valid then
             return { x, y }
