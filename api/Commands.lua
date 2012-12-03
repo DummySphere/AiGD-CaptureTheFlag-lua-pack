@@ -55,7 +55,7 @@ function MoveCommand:new(_botId, _params, _description)
 	elseif _params.target_list then
 		self.target = {}
 		for _, target in ipairs(_params.target_list) do
-			table.insert(self.target_list, target)
+			table.insert(self.target, target)
 		end
 	else
 		error("MoveCommand has no target given")
@@ -78,7 +78,7 @@ function AttackCommand:new(_botId, _params, _description)
 	elseif _params.target_list then
 		self.target = {}
 		for _, target in ipairs(_params.target_list) do
-			table.insert(self.target_list, target)
+			table.insert(self.target, target)
 		end
 	else
 		error("MoveCommand has no target given")
@@ -101,7 +101,7 @@ function ChargeCommand:new(_botId, _params, _description)
 	elseif _params.target_list then
 		self.target = {}
 		for _, target in ipairs(_params.target_list) do
-			table.insert(self.target_list, target)
+			table.insert(self.target, target)
 		end
 	else
 		error("MoveCommand has no target given")

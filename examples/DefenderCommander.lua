@@ -11,12 +11,10 @@ function DefenderCommander:getName()
     return "DefenderCommander"
 end
 
-
 function DefenderCommander:initialize()
     -- Do stuff in here before the m_game starts
     self.attacker = nil
 end
-
 
 function DefenderCommander:tick()
     -- TODO: When defender is down to the last bot that"s attacking the flag, it"ll end up ordering
@@ -65,7 +63,6 @@ function DefenderCommander:tick()
         end
     end
 end
-
 
 function DefenderCommander:shutdown()
     -- do stuff in here after the game finishes

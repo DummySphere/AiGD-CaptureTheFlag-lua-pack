@@ -1,93 +1,70 @@
 
 local GreedyCommander = class(Commander)
 
-error("TODO: GreedyCommander")
---[[
-class GreedyCommander : public Commander
-{
-public:
-    virtual string getName() const
-    virtual void initialize()
-    virtual void tick()
-    virtual void shutdown()
+function GreedyCommander:new(...)
+	Commander.new(self, ...)
+	-- Custom constructor here
 end
-
-REGISTER_COMMANDER(GreedyCommander)
-
 
 function GreedyCommander:getName()
     -- change this to return the commander name
     return "GreedyCommander"
 end
 
-
 function GreedyCommander:initialize()
-    -- do stuff in here before the game starts
+    -- Do stuff in here before the game starts
 end
 
-
 function GreedyCommander:tick()
-    --
     -- Process the bots that are waiting for orders, either send them all to attack or all to defend.
-    --
 
-    local captured = self.game.enemyTeam.flag.carrier == nil
+    local captured = not self.game.enemyTeam.flag.carrier
 
     local our_flag = self.game.team.flag.position
     local their_flag = self.game.enemyTeam.flag.position
-    local their_base = self.level.botSpawnAreas[self.game.enemyTeam.name].first
+    local their_base = self.game.enemyTeam.botSpawnArea[1]
 
-    local option = (int)((float)rand()/RAND_MAX*3)
+    local option = math.random(3)
     local lookat
-    switch(option)
-    {
-    case 0: lookat = their_flag; break
-    case 1: lookat = their_flag; break
-    case 2: lookat = their_base; break
-    end
+	if option == 1 or option == 2 then
+		lookat = their_flag
+	elseif option == 3 then
+		lookat = their_base
+	end
 
     -- Only process bots that are done with their orders...
-    for(size_t i=0; i<self.game.bots_available.size(); ++i)
-    {
-        local bot = self.game.bots_available[i]
-        if(captured)
-        {
+	for _, bot in ipairs(self.game.bots_available) do
+        if captured then
             local target = self.game.team.flagScoreLocation
-            local closeEnoughDist = 8.0f
+            local closeEnoughDist = 8
 
             -- 1) Either run home, if this bot is the carrier or otherwise randomly.
-            if((bot.flag ~= nil) or (rand()<(RAND_MAX/2)) or target.distance(*bot.position) > closeEnoughDist)
-            {
-                self:issue(ChargeCommand(bot.name, target, "scrambling home"))
-            end
+            if bot.flag or math.random() < 0.5 or Vector2.distance(target, bot.position) > closeEnoughDist then
+                self:issue(ChargeCommand(bot.name, { target = target }, "scrambling home"))
             else -- 2) Run to the exact flag location, effectively escorting the carrier.
-            {
-                self:issue(AttackCommand(bot.name, self.game.enemyTeam.flag.position, boost:make_optional(lookat), "attacking enemy flag"))
+                self:issue(AttackCommand(bot.name, { target = self.game.enemyTeam.flag.position, lookAt = lookat }, "attacking enemy flag"))
             end
-        end
         else
-        {
-            local spawnArea = self.level.botSpawnAreas[self.game.team.name]
-            local inSpawn =  (   bot.position.x >= spawnArea.first.x 
-                            and  bot.position.x <= spawnArea.second.x
-                            and  bot.position.y >= spawnArea.first.y
-                            and  bot.position.y <= spawnArea.second.y)
+            local spawnArea = self.game.team.botSpawnArea
+            local inSpawn =  (   bot.position[1] >= spawnArea[1][1]
+                            and  bot.position[1] <= spawnArea[2][1]
+                            and  bot.position[2] >= spawnArea[1][2]
+                            and  bot.position[2] <= spawnArea[2][2])
 
-            local path
-            path.push_back(self.game.enemyTeam.flag.position)
+            local path = {}
+            table.insert(path, self.game.enemyTeam.flag.position)
 
-            if(inSpawn and (rand()<(RAND_MAX/2)))
-                path.insert(path.begin(), self.game.team.flagScoreLocation)
+            if inSpawn and math.random() < 0.5 then
+                table.insert(path, self.game.team.flagScoreLocation)
+			end
 
-            self:issue(AttackCommand(bot.name, path, boost:make_optional(lookat), "attacking enemy flag"))
+            self:issue(AttackCommand(bot.name, { target_list = path, lookAt = lookat }, "attacking enemy flag"))
         end
     end
 end
 
-
 function GreedyCommander:shutdown()
-    -- do stuff in here after the game finishes
+    -- Do stuff in here after the game finishes
 end
-]]
 
 return GreedyCommander

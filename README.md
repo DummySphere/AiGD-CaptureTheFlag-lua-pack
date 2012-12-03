@@ -4,14 +4,23 @@ AiGameDev CTF Lua Bindings
 The Lua starter kit for the Capture the Flag SDK allows you to write your commander in Lua. 
 It uses a network interface (JSON) to give orders to your bots. 
 
+* [Prerequisites](#prerequisites)
+* [Developing on Windows](#windows)
+* [Developing on Linux](#linux)
+* [API](#api)
+* [ToDo](#todo)
+* [History](#history)
 
-Prerequisites
--------------
+
+<a id="prerequisites"></a>Prerequisites
+---------------------------------------
+
 In order to use it you need the aisandbox AND the Capture the Flag SDK. If you have not installed these yet get to http://aisandbox.com/download/. 
 
 
-Developing on Windows
----------------------
+<a id="windows"></a>Developing on Windows
+-----------------------------------------
+
 Modify the simulate.py file so that the defaults variable is set with the game.NetworkCommander and the commander that you want to test your commander against.
 eg defaults = ['examples.Defender', 'game.NetworkCommander']
 Run simulate.bat to start the game server.
@@ -29,8 +38,9 @@ You can launch the examples with the following commands:
 * `client.bat examples.BalancedCommander`
 
 
-Developing on Linux
--------------------
+<a id="linux"></a>Developing on Linux
+-------------------------------------
+
 Run the game server using simulate.py with game.NetworkCommander as one of the provided commanders.
 eg simulate.py example.GreedyCommander game.NetworkCommander
 
@@ -47,8 +57,14 @@ You can launch the examples with the following commands:
 * `lua client.lua examples.BalancedCommander`
 
 
-API
----
+<a id="api"></a>API
+-------------------
+
+### Commander
+
+* `commander.level`: `LevelInfo`
+* `commander.game`: `GameInfo`
+* `commander:issue(command)`
 
 ### Commands
 
@@ -62,22 +78,47 @@ API
 * `ChargeCommand( bot.name , { target = { x, y } } [ , description ] )`
 * `ChargeCommand( bot.name, { target_list = { [ { x, y } ]* } } [ , description ] )`
 
+### LevelInfo
 
-ToDo
-----
+* `level.*` : data given by the server (cf. [network protocol][])
+* `level.blockHeights( x, y )` -> `blockHeight`
+  `level.blockHeights( position )` -> `blockHeight`
+	* `x` : x coordinate in range [ 0, level.width - 1 ]
+	* `y` : y coordinate in range [ 0, level.height - 1 ]
+	* `position` : Vector2 coordinate
+	* `blockHeight` : number ( -1 : out of range ; 0 : walkable ; > 0 : not walkable )
+* `level:findRandomFreePositionInBox( minPosition, maxPosition )` -> `freePosition` or `nil`
+* `level:findNearestFreePosition( position )` -> `nearestFreePosition` or `nil`
 
-* Convert examples.GreedyCommander and examples.BalancedComander to Lua
+### GameInfo
+
+* `game.*` : data given by the server (cf. [network protocol][]) ; ids are replaced by references to objects (in the level info) when possible.
+* `game.bots_alive` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive
+* `game.bots_available` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive and idle
+
+### Others
+
+For more information about available data, see sources and/or [network protocol][].
+
+[network protocol]: http://aisandbox.com/documentation/network.html
+
+
+<a id="todo"></a>ToDo
+---------------------
+
 * Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
 * Add Vector2 metatable
 
 
-History
--------
+<a id="history"></a>History
+---------------------------
 
-### Next version
+### Version 0.3 (2012-12-03)
 
 * Fix function LevelInfo.findRandomFreePositionInBox
 * Fix commander examples.DefenderCommander
+* Convert examples.GreedyCommander and examples.BalancedComander to Lua
+* Improve API documentation
 
 ### Version 0.2 (2012-11-29)
 

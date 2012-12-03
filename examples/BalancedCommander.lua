@@ -1,132 +1,117 @@
 
 local BalancedCommander = class(Commander)
 
-error("TODO: BalancedCommander")
---[[
-class BalancedCommander : public Commander
-{
-private:
-    Vector2 getFlankingPosition(BotInfo* bot, Vector2 target)
-
-    BotInfo *attacker
-    BotInfo *defender
-    Vector2 middle, left, right, front
+function BalancedCommander:new(...)
+	Commander.new(self, ...)
+	-- Custom constructor here
 end
 
-REGISTER_COMMANDER(BalancedCommander)
-
-
 function BalancedCommander:getName()
-    -- change this to return the commander name
+    -- Change this to return the commander name
     return "BalancedCommander"
 end
 
-
 function BalancedCommander:initialize()
-    -- do stuff in here before the game starts
+    -- Do stuff in here before the game starts
     self.attacker = nil
     self.defender = nil
 
     -- Calculate flag positions and  store the middle->
     local ours = self.game.team.flag.position
     local theirs = self.game.enemyTeam.flag.position
-    self.middle = (theirs + ours) / 2.0f
+    self.middle = Vector2.divide(Vector2.add(theirs, ours), 2)
 
-    local d = (ours - theirs)    
-    self.left = Vector2(-d.y, d.x).normalisedCopy()
-    self.right = Vector2(d.y, -d.x).normalisedCopy()
-    self.front = Vector2(d.x, d.y).normalisedCopy()
+    local d = Vector2.normalize(Vector2.sub(ours, theirs))
+    self.front = d
+    self.left = { -d[2], d[1] }
+    self.right = { d[2], -d[1] }
 end
 
-
 function BalancedCommander:tick()
-    -- the attacker is dead we"ll pick another when available
-    if(self.attacker and *self.attacker.health <= 0)
+    -- the attacker is dead we'll pick another when available
+    if self.attacker and self.attacker.health <= 0 then
         self.attacker = nil
+	end
 
-    -- the defender is dead we"ll pick another when available
-    if( self.defender and  (*self.defender.health <= 0 or self.defender.flag))
+    -- the defender is dead we'll pick another when available
+    if self.defender and (self.defender.health <= 0 or self.defender.flag) then
         self.defender = nil
+	end
 
     -- In this example we loop through all living bots without orders (self.game.bots_available)
     -- All other bots will wander randomly
-    for (size_t i=0; i< self.game.bots_available.size(); ++i)
-        local bot = self.game.bots_available[i]
-        if( (self.defender == nil or self.defender == bot) and  not bot.flag)
+	for _, bot in ipairs(self.game.bots_available) do
+        if (self.defender == nil or self.defender == bot) and not bot.flag then
             self.defender = bot
 
             -- Stand on a random position in a box of 4m around the flag->
             local targetPosition = self.game.team.flagScoreLocation
-            local targetMin = targetPosition - Vector2(2.0f, 2.0f)
-            local targetMax = targetPosition + Vector2(2.0f, 2.0f)
-            local goal = targetPosition
-            self.level.findRandomFreePositionInBox(goal, targetMin, targetMax)
+            local targetMin = Vector2.sub(targetPosition, { 2, 2 })
+            local targetMax = Vector2.add(targetPosition, { 2, 2 })
+            local goal = self.level:findRandomFreePositionInBox(targetMin, targetMax) or targetPosition
 
-            if( (goal - *bot.position).length() > 8.0f)
-                self:issue(ChargeCommand(self.defender.name, goal, "running to defend"))
+            if Vector2.distance(goal, bot.position) > 8 then
+                self:issue(ChargeCommand(self.defender.name, { target = goal }, "running to defend"))
             else
-                self:issue(DefendCommand(self.defender.name, (self.middle - *bot.position), "turning to defend"))
+                self:issue(DefendCommand(self.defender.name, { target = Vector2.sub(self.middle, bot.position) }, "turning to defend"))
 			end
-        else if (self.attacker == nil or self.attacker == bot or bot.flag)
+        elseif self.attacker == nil or self.attacker == bot or bot.flag then
             -- Our attacking bot
             self.attacker = bot
-            if( bot.flag)
+            if bot.flag then
                 -- Tell the flag carrier to run home!
                 local target = self.game.team.flagScoreLocation
-                self:issue(MoveCommand(bot.name, target, "running home"))
+                self:issue(MoveCommand(bot.name, { target = target }, "running home"))
             else
                 local target = self.game.enemyTeam.flag.position
-                local flank = getFlankingPosition(bot, target)
-                if( (target - flank).length() > (*bot.position - target).length())
-                    self:issue(AttackCommand(bot.name, target, target, "attack from flank"))
+                local flank = self:getFlankingPosition(bot, target)
+                if Vector2.distance(target, flank) > Vector2.distance(bot.position, target) then
+                    self:issue(AttackCommand(bot.name, { target = target, lookAt = target }, "attack from flank"))
                 else
-                    self.level.findNearestFreePosition(flank, flank)
-                    self:issue(MoveCommand(bot.name, flank, "running to flank"))
+                    flank = self.level:findNearestFreePosition(flank) or flank
+                    self:issue(MoveCommand(bot.name, { target = flank }, "running to flank"))
                 end
             end
         else
             -- All our other (random) bots
 
             -- pick a random position in the level to move to                               
-            local minSide = min(self.level.width, self.level.height)
-            local box = Vector2((float)minSide,(float)minSide)
-            local target
+            local minSide = math.min(self.level.width, self.level.height)
+            local box = { minSide, minSide }
+            local target = self.level:findRandomFreePositionInBox(Vector2.add(self.middle, Vector2.multiply(box,  0.4)), Vector2.sub(self.middle, Vector2.multiply(box,  0.4)))
 
             -- issue the order
-            if(self.level.findRandomFreePositionInBox(target, self.middle + box * 0.4f, self.middle - box * 0.4f))
-                self:issue(AttackCommand(bot.name, target, boost:none,"random patrol"))
+            if target then
+                self:issue(AttackCommand(bot.name, { target = target }, "random patrol"))
+			end
         end
     end
 end   
-
 
 function BalancedCommander:shutdown()
     -- do stuff in here after the game finishes
 end
 
-function BalancedCommander:getFlankingPosition( BotInfo* bot, Vector2 target )
-    local flanks[]  =  {target + self.left*16.0f, target + self.right*16.0fend
-    local options
-    for(int i=0; i<2; ++i)
-    {
-        local val
-        if(self.level.findNearestFreePosition(val, flanks[i]))
-            options.push_back(val)
+function BalancedCommander:getFlankingPosition(_bot, _target)
+    local flanks = { Vector2.add(_target, Vector2.multiply(self.left, 16)), Vector2.add(_target, Vector2.multiply(self.right, 16)) }
+    local options = {}
+    for _, flank in ipairs(flanks) do
+        local val = self.level:findNearestFreePosition(flank)
+        if val then
+            table.insert(options, val)
+		end
     end
 
-    local bestDist = FLT_MAX
-    local bestOption = target
-    for (size_t i=0; i<options.size(); ++i)
-    {
-        local dist = (options[i]-*bot.position).length()
-        if(dist < bestDist)
-        {
+    local bestDist = math.huge
+    local bestOption = _target
+    for _, option in ipairs(options) do
+        local dist = Vector2.distance(option, _bot.position)
+        if dist < bestDist then
             bestDist = dist
-            bestOption = options[i]
+            bestOption = option
         end
     end
     return bestOption
 end
-]]
 
 return BalancedCommander
