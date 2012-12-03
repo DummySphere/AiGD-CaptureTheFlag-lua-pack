@@ -22,12 +22,16 @@ function JSON.table_to_object(_name_or_class, _table, ...)
 	assert(type(_table.__value__) == "table")
 	return codec.unserialize(_table.__value__, ...)
 end
-function JSON.parse_map(_func, _name_or_class, _map, ...)
+
+function JSON.parse_map(_func, _map, ...)
 	local new_map = {}
 	for key, value in pairs(_map) do
-		new_map[key] = _func(_name_or_class, value, ...)
+		new_map[key] = _func(value, ...)
 	end
 	return new_map
+end
+function JSON.parse_class_map(_func, _name_or_class, _map, ...)
+	return JSON.parse_map(function(_value, ...) return _func(_name_or_class, _value, ...) end, _map, ...)
 end
 
 function JSON.table_to_json(_table)
@@ -129,6 +133,7 @@ end
 -- Handshaking
 
 require "Handshaking"
+
 JSON.register(
 		ConnectServer,
 		"ConnectServer",
@@ -159,6 +164,13 @@ JSON.register(
 -- GameInfo
 
 require "GameInfo"
+
+local function Vector2_to_table(_object) return { _object.x, _object.y } end
+local function table_to_Vector2(_table) return Vector2(_table) end
+
+local function area_to_table(_object) return { Vector2_to_table(_object.min), Vector2_to_table(_object.max) } end
+local function table_to_area(_table) return { min = table_to_Vector2(_table[1]), max = table_to_Vector2(_table[2]) } end
+
 JSON.register(
 		LevelInfo,
 		"LevelInfo",
@@ -168,9 +180,9 @@ JSON.register(
 				height = _object.height,
 				blockHeights = _object.blockHeights,
 				teamNames = _object.teamNames,
-				flagSpawnLocations = _object.flagSpawnLocations,
-				flagScoreLocations = _object.flagScoreLocations,
-				botSpawnAreas = _object.botSpawnAreas,
+				flagSpawnLocations = JSON.parse_map(Vector2_to_table, _object.flagSpawnLocations),
+				flagScoreLocations = JSON.parse_map(Vector2_to_table, _object.flagScoreLocations),
+				botSpawnAreas = JSON.parse_map(area_to_table, _object.botSpawnAreas),
 				FOVangle = _object.FOVangle,
 				characterRadius = _object.characterRadius,
 				walkingSpeed = _object.walkingSpeed,
@@ -186,9 +198,9 @@ JSON.register(
 				height = _table.height,
 				blockHeights = _table.blockHeights,
 				teamNames = _table.teamNames,
-				flagSpawnLocations = _table.flagSpawnLocations,
-				flagScoreLocations = _table.flagScoreLocations,
-				botSpawnAreas = _table.botSpawnAreas,
+				flagSpawnLocations = JSON.parse_map(table_to_Vector2, _table.flagSpawnLocations),
+				flagScoreLocations = JSON.parse_map(table_to_Vector2, _table.flagScoreLocations),
+				botSpawnAreas = JSON.parse_map(table_to_area, _table.botSpawnAreas),
 				FOVangle = _table.FOVangle,
 				characterRadius = _table.characterRadius,
 				walkingSpeed = _table.walkingSpeed,
@@ -199,26 +211,27 @@ JSON.register(
 			}
 		end
 	)
+
 JSON.register(
 		GameInfo,
 		"GameInfo",
 		function(_object)
 			return {
-				teams = JSON.parse_map(JSON.object_to_table, "TeamInfo", _object.teams),
+				teams = JSON.parse_class_map(JSON.object_to_table, "TeamInfo", _object.teams),
 				team = _object.team.name,
 				enemyTeam = _object.enemyTeam.name,
-				flags = JSON.parse_map(JSON.object_to_table, "FlagInfo", _object.flags),
-				bots = JSON.parse_map(JSON.object_to_table, "BotInfo", _object.bots),
+				flags = JSON.parse_class_map(JSON.object_to_table, "FlagInfo", _object.flags),
+				bots = JSON.parse_class_map(JSON.object_to_table, "BotInfo", _object.bots),
 				match = JSON.object_to_table("MatchInfo", _object.match),
 			}
 		end,
 		function(_table)
 			local params = {}
-			params.bots = JSON.parse_map(JSON.table_to_object, "BotInfo", _table.bots)
-			params.teams = JSON.parse_map(JSON.table_to_object, "TeamInfo", _table.teams, params)
+			params.bots = JSON.parse_class_map(JSON.table_to_object, "BotInfo", _table.bots)
+			params.teams = JSON.parse_class_map(JSON.table_to_object, "TeamInfo", _table.teams, params)
 			params.team = assert(params.teams[_table.team])
 			params.enemyTeam = assert(params.teams[_table.enemyTeam])
-			params.flags = JSON.parse_map(JSON.table_to_object, "FlagInfo", _table.flags, params)
+			params.flags = JSON.parse_class_map(JSON.table_to_object, "FlagInfo", _table.flags, params)
 			for name, team in pairs(params.teams) do
 				team.flag = params.flags[team.flag]
 			end
@@ -236,6 +249,7 @@ JSON.register(
 			return GameInfo(params)
 		end
 	)
+
 JSON.register(
 		TeamInfo,
 		"TeamInfo",
@@ -244,9 +258,9 @@ JSON.register(
 				name = _object.name,
 				members = _object.members, -- TODO: array of names
 				flag = _object.flag and _object.flag.name or JSON.null,
-				flagSpawnLocation = _object.flagSpawnLocation,
-				flagScoreLocation = _object.flagScoreLocation,
-				botSpawnArea = _object.botSpawnArea,
+				flagSpawnLocation = Vector2_to_table(_object.flagSpawnLocation),
+				flagScoreLocation = Vector2_to_table(_object.flagScoreLocation),
+				botSpawnArea = area_to_table(_object.botSpawnArea),
 			}
 		end,
 		function(_table, _params)
@@ -254,9 +268,9 @@ JSON.register(
 				name = _table.name,
 				members = {},
 				flag = _table.flag, -- temp name, will be replaced by flag object in GameInfo unserialization
-				flagSpawnLocation = _table.flagSpawnLocation,
-				flagScoreLocation = _table.flagScoreLocation,
-				botSpawnArea = _table.botSpawnArea,
+				flagSpawnLocation = table_to_Vector2(_table.flagSpawnLocation),
+				flagScoreLocation = table_to_Vector2(_table.flagScoreLocation),
+				botSpawnArea = table_to_area(_table.botSpawnArea),
 			}
 			for _, bot in ipairs(_table.members) do
 				table.insert(params.members, assert(_params.bots[bot]))
@@ -264,6 +278,7 @@ JSON.register(
 			return TeamInfo(params)
 		end
 	)
+
 JSON.register(
 		FlagInfo,
 		"FlagInfo",
@@ -271,7 +286,7 @@ JSON.register(
 			return {
 				name = _object.name,
 				team = _object.team.name,
-				position = _object.position,
+				position = Vector2_to_table(_object.position),
 				carrier = _object.carrier and _object.carrier.name or JSON.null,
 				respawnTimer = _object.respawnTimer,
 			}
@@ -280,12 +295,13 @@ JSON.register(
 			return FlagInfo{
 				name = _table.name,
 				team = assert(_params.teams[_table.team]),
-				position = _table.position,
+				position = table_to_Vector2(_table.position),
 				carrier = _table.carrier and assert(_params.bots[_table.carrier], tostring(_table.carrier) .. "bot not found") or JSON.null,
 				respawnTimer = _table.respawnTimer,
 			}
 		end
 	)
+
 JSON.register(
 		BotInfo,
 		"BotInfo",
@@ -295,8 +311,8 @@ JSON.register(
 				team = _object.team.name,
 				health = _object.health,
 				state = _object.state,
-				position = _object.position,
-				facingDirection = _object.facingDirection,
+				position = Vector2_to_table(_object.position),
+				facingDirection = Vector2_to_table(_object.facingDirection),
 				seenlast = _object.seenlast,
 				flag = _object.flag and _object.flag.name or JSON.null,
 				visibleEnemies = _object.visibleEnemies, -- TODO: array of names
@@ -309,8 +325,8 @@ JSON.register(
 				team = _table.team, -- temp name, will be replaced by team object in GameInfo unserialization
 				health = _table.health,
 				state = _table.state,
-				position = _table.position,
-				facingDirection = _table.facingDirection,
+				position = _table.position and table_to_Vector2(_table.position),
+				facingDirection = _table.facingDirection and table_to_Vector2(_table.facingDirection),
 				seenlast = _table.seenlast,
 				flag = _table.flag, -- temp name, will be replaced by flag object in GameInfo unserialization
 				visibleEnemies = _table.visibleEnemies, -- temp name list, will be replaced by bot objects in GameInfo unserialization
@@ -318,6 +334,7 @@ JSON.register(
 			}
 		end
 	)
+
 JSON.register(
 		MatchInfo,
 		"MatchInfo",
@@ -325,17 +342,18 @@ JSON.register(
 			return {
 				timeRemaining = _object.timeRemaining,
 				timeToNextRespawn = _object.timeToNextRespawn,
-				combatEvents = JSON.parse_map(JSON.object_to_table, "MatchCombatEvent", _object.combatEvents),
+				combatEvents = JSON.parse_class_map(JSON.object_to_table, "MatchCombatEvent", _object.combatEvents),
 			}
 		end,
 		function(_table, _params)
 			return MatchInfo{
 				timeRemaining = _table.timeRemaining,
 				timeToNextRespawn = _table.timeToNextRespawn,
-				combatEvents = JSON.parse_map(JSON.table_to_object, "MatchCombatEvent", _table.combatEvents, _params),
+				combatEvents = JSON.parse_class_map(JSON.table_to_object, "MatchCombatEvent", _table.combatEvents, _params),
 			}
 		end
 	)
+
 JSON.register(
 		MatchCombatEvent,
 		"MatchCombatEvent",
@@ -370,11 +388,13 @@ JSON.register(
 -- Commands
 
 require "Commands"
+
 JSON.register(
 		DefendCommand,
 		"Defend",
 		function(_object)
-			local facingDirections = _object.facingDirections and JSON.parse_map(function(_name_or_class, value) return { value.direction, value.time } end, DefendCommand.FacingDirection, _object.facingDirections) or JSON.null
+			local function facingDirection_to_table(_object) return { Vector2_to_table(_object.direction), _object.time } end
+			local facingDirections = _object.facingDirections and JSON.parse_map(facingDirection_to_table, _object.facingDirections) or JSON.null
 			return {
 				bot = _object.botId,
 				facingDirections = facingDirections,
@@ -382,50 +402,54 @@ JSON.register(
 			}
 		end,
 		function(_table)
-			local facingDirection_list = _table.facingDirections and JSON.parse_map(function(_name_or_class, value) return DefendCommand.FacingDirection(unpack(value)) end, DefendCommand.FacingDirection, _table.facingDirections)
+			local function table_to_facingDirection(_table) return DefendCommand.FacingDirection(table_to_Vector2(_table[1]), _table[2]) end
+			local facingDirection_list = _table.facingDirections and JSON.parse_map(table_to_facingDirection, _table.facingDirections)
 			return DefendCommand(_table.bot, { facingDirection_list = facingDirection_list }, _table.description)
 		end
 	)
+
 JSON.register(
 		MoveCommand,
 		"Move",
 		function(_object)
 			return {
 				bot = _object.botId,
-				target = _object.target,
+				target = JSON.parse_map(Vector2_to_table, _object.target),
 				description = _object.description,
 			}
 		end,
 		function(_table)
-			return MoveCommand(_table.bot, { target_list = _table.target }, _table.description)
+			return MoveCommand(_table.bot, { target_list = JSON.parse_map(table_to_Vector2, _table.target) }, _table.description)
 		end
 	)
+
 JSON.register(
 		AttackCommand,
 		"Attack",
 		function(_object)
 			return {
 				bot = _object.botId,
-				target = _object.target,
-				lookAt = _object.lookAt or JSON.null,
+				target = JSON.parse_map(Vector2_to_table, _object.target),
+				lookAt = _object.lookAt and Vector2_to_table(_object.lookAt) or JSON.null,
 				description = _object.description,
 			}
 		end,
 		function(_table)
-			return AttackCommand(_table.bot, { target_list = _table.target, lookAt = _table.lookAt }, _table.description)
+			return AttackCommand(_table.bot, { target_list = JSON.parse_map(table_to_Vector2, _table.target), lookAt = _table.lookAt and table_to_Vector2(_table.lookAt) }, _table.description)
 		end
 	)
+
 JSON.register(
 		ChargeCommand,
 		"Charge",
 		function(_object)
 			return {
 				bot = _object.botId,
-				target = _object.target,
+				target = JSON.parse_map(Vector2_to_table, _object.target),
 				description = _object.description,
 			}
 		end,
 		function(_table)
-			return ChargeCommand(_table.bot, { target_list = _table.target }, _table.description)
+			return ChargeCommand(_table.bot, { target_list = JSON.parse_map(table_to_Vector2, _table.target) }, _table.description)
 		end
 	)

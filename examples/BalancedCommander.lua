@@ -19,12 +19,12 @@ function BalancedCommander:initialize()
     -- Calculate flag positions and  store the middle->
     local ours = self.game.team.flag.position
     local theirs = self.game.enemyTeam.flag.position
-    self.middle = Vector2.divide(Vector2.add(theirs, ours), 2)
+    self.middle = (theirs + ours) / 2
 
-    local d = Vector2.normalize(Vector2.sub(ours, theirs))
+    local d = (ours - theirs):normalize()
     self.front = d
-    self.left = { -d[2], d[1] }
-    self.right = { d[2], -d[1] }
+    self.left = Vector2(-d.y, d.x)
+    self.right = Vector2(d.y, -d.x)
 end
 
 function BalancedCommander:tick()
@@ -46,14 +46,14 @@ function BalancedCommander:tick()
 
             -- Stand on a random position in a box of 4m around the flag->
             local targetPosition = self.game.team.flagScoreLocation
-            local targetMin = Vector2.sub(targetPosition, { 2, 2 })
-            local targetMax = Vector2.add(targetPosition, { 2, 2 })
+            local targetMin = targetPosition - Vector2(2, 2)
+            local targetMax = targetPosition + Vector2(2, 2)
             local goal = self.level:findRandomFreePositionInBox(targetMin, targetMax) or targetPosition
 
             if Vector2.distance(goal, bot.position) > 8 then
                 self:issue(ChargeCommand(self.defender.name, { target = goal }, "running to defend"))
             else
-                self:issue(DefendCommand(self.defender.name, { target = Vector2.sub(self.middle, bot.position) }, "turning to defend"))
+                self:issue(DefendCommand(self.defender.name, { target = (self.middle - bot.position) }, "turning to defend"))
 			end
         elseif self.attacker == nil or self.attacker == bot or bot.flag then
             -- Our attacking bot
@@ -77,8 +77,8 @@ function BalancedCommander:tick()
 
             -- pick a random position in the level to move to                               
             local minSide = math.min(self.level.width, self.level.height)
-            local box = { minSide, minSide }
-            local target = self.level:findRandomFreePositionInBox(Vector2.add(self.middle, Vector2.multiply(box,  0.4)), Vector2.sub(self.middle, Vector2.multiply(box,  0.4)))
+            local box = Vector2(minSide, minSide)
+            local target = self.level:findRandomFreePositionInBox(self.middle + (box * 0.4), self.middle - (box * 0.4))
 
             -- issue the order
             if target then
@@ -93,7 +93,7 @@ function BalancedCommander:shutdown()
 end
 
 function BalancedCommander:getFlankingPosition(_bot, _target)
-    local flanks = { Vector2.add(_target, Vector2.multiply(self.left, 16)), Vector2.add(_target, Vector2.multiply(self.right, 16)) }
+    local flanks = { _target + (self.left * 16), _target + (self.right * 16) }
     local options = {}
     for _, flank in ipairs(flanks) do
         local val = self.level:findNearestFreePosition(flank)

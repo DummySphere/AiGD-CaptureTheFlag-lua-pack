@@ -41,8 +41,8 @@ function DefenderCommander:tick()
             -- defend the flag!
             local targetPosition = self.game.team.flagSpawnLocation
 			local areaRadius = 8
-            local targetMin = Vector2.sub(targetPosition, { areaRadius, areaRadius })
-            local targetMax = Vector2.add(targetPosition, { areaRadius, areaRadius })
+            local targetMin = targetPosition - { areaRadius, areaRadius }
+            local targetMax = targetPosition + { areaRadius, areaRadius }
             if bot.flag then
                 --bring it hooome
                 self:issue(ChargeCommand(bot.name, { target = self.game.team.flagScoreLocation }, "returning enemy flag!"))
@@ -57,7 +57,7 @@ function DefenderCommander:tick()
                         end
                     end
                 else 
-                    self:issue(DefendCommand(bot.name, { facingDirection = Vector2.sub(targetPosition, bot.position) }, "defending facing flag"))
+                    self:issue(DefendCommand(bot.name, { facingDirection = (targetPosition - bot.position) }, "defending facing flag"))
 				end
             end
         end

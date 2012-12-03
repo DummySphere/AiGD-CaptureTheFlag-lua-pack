@@ -15,11 +15,8 @@ function LevelInfo:new(_table)
     self.blockHeights = _table.blockHeights                            -- A 2D table showing the height of the block at each position in the world
                                                                        -- indexing is based on [x + 1][y + 1]
 	setmetatable(self.blockHeights, { __call = function(self, _x, _y)  -- Coordinates are from {0, 0} to {width - 1, height - 1}
-		if type(_x) == "table" then
-			assert(_y == nil)
-			_x, _y = _x[1], _x[2]
-		end
-		local ix, iy = math.floor(_x) + 1, math.floor(_y) + 1
+		local v = Vector2(_x, _y)
+		local ix, iy = math.floor(v.x) + 1, math.floor(v.y) + 1
 		local col = self[ix]
 		if col == nil then
 			return -1
@@ -46,12 +43,12 @@ end
 function LevelInfo:findRandomFreePositionInBox(_min, _max)
     -- Find a random position for a character to move to in an area.
     -- nil is returned if no position could be found.
-    local minX, minY = math.min(math.max(0, _min[1]), self.width - 1), math.min(math.max(0, _min[2]), self.height - 1)
-    local maxX, maxY = math.min(math.max(0, _max[1]), self.width - 1), math.min(math.max(0, _max[2]), self.height - 1)
+    local minX, minY = math.min(math.max(0, _min.x), self.width - 1), math.min(math.max(0, _min.y), self.height - 1)
+    local maxX, maxY = math.min(math.max(0, _max.x), self.width - 1), math.min(math.max(0, _max.y), self.height - 1)
     local rangeX, rangeY = maxX - minX, maxY - minY
 
     if rangeX == 0 or rangeY == 0 then
-		print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (rangeX = %d, rangeY = %d)", _min[1], _min[2], _max[1], _max[2], rangeX, rangeY))
+		print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (rangeX = %d, rangeY = %d)", _min.x, _min.y, _max.x, _max.y, rangeX, rangeY))
         return
     end
 
@@ -81,16 +78,16 @@ function LevelInfo:findRandomFreePositionInBox(_min, _max)
         valid = valid and not ((x + 1 - ix) < characterRadius and (iy + 1 - y) < characterRadius and ix < self.width - 1 and iy < self.height - 1 and blocks(ix + 1, iy + 1) > 0)
 
         if valid then
-            return { x, y }
+            return Vector2(x, y)
         end
     end
-	print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (width = %d, height = %d)", _min[1], _min[2], _max[1], _max[2], self.width, self.height))
+	print(string.format("no free random position found in range [{ %d, %d }, { %d, %d }] (width = %d, height = %d)", _min.x, _min.y, _max.x, _max.y, self.width, self.height))
 end
 
 function LevelInfo:findNearestFreePosition(_position)
     for i = 0, 9 do
-        local areaMin = { _position[1] - i, _position[2] - i }
-        local areaMax = { _position[1] + i, _position[2] + i }
+        local areaMin = Vector2(_position.x - i, _position.y - i)
+        local areaMax = Vector2(_position.x + i, _position.y + i)
         
         local rand_pos = self:findRandomFreePositionInBox(areaMin, areaMax)
         if rand_pos then

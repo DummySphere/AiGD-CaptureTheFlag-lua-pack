@@ -81,8 +81,7 @@ You can launch the examples with the following commands:
 ### LevelInfo
 
 * `level.*` : data given by the server (cf. [network protocol][])
-* `level.blockHeights( x, y )` -> `blockHeight`
-  `level.blockHeights( position )` -> `blockHeight`
+* `level.blockHeights( x, y )` or `level.blockHeights( position )` -> `blockHeight`
 	* `x` : x coordinate in range [ 0, level.width - 1 ]
 	* `y` : y coordinate in range [ 0, level.height - 1 ]
 	* `position` : Vector2 coordinate
@@ -96,6 +95,10 @@ You can launch the examples with the following commands:
 * `game.bots_alive` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive
 * `game.bots_available` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive and idle
 
+### TeamInfo
+
+* `team.botSpawnArea.min` and `team.botSpawnArea.max` : extent of team's bot spawn area
+
 ### Others
 
 For more information about available data, see sources and/or [network protocol][].
@@ -107,7 +110,8 @@ For more information about available data, see sources and/or [network protocol]
 ---------------------
 
 * Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
-* Add Vector2 metatable
+
+Please report bugs or suggestions ...
 
 
 <a id="history"></a>History
@@ -119,6 +123,7 @@ For more information about available data, see sources and/or [network protocol]
 * Fix commander examples.DefenderCommander
 * Convert examples.GreedyCommander and examples.BalancedComander to Lua
 * Improve API documentation
+* Add Vector2 metatable and convert all existing Vector2
 
 ### Version 0.2 (2012-11-29)
 

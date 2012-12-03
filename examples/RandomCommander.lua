@@ -29,7 +29,7 @@ function RandomCommander:tick()
 		elseif rand == 2 then -- Or a random choice of the goal locations for returning flags.
 			target = ((math.random() > 0.5) and self.game.team or self.game.enemyTeam).flagScoreLocation;
 		elseif rand == 3 then -- Or a random position in the entire level, one that's not blocked.
-			target = self.level:findRandomFreePositionInBox({ 0, 0 }, { self.level.width - 1, self.level.height - 1 }) or bot.position
+			target = self.level:findRandomFreePositionInBox(Vector2(0, 0), Vector2(self.level.width - 1, self.level.height - 1)) or bot.position
 		end
 
 		local rand = math.random(2)

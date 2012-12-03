@@ -46,10 +46,10 @@ function GreedyCommander:tick()
             end
         else
             local spawnArea = self.game.team.botSpawnArea
-            local inSpawn =  (   bot.position[1] >= spawnArea[1][1]
-                            and  bot.position[1] <= spawnArea[2][1]
-                            and  bot.position[2] >= spawnArea[1][2]
-                            and  bot.position[2] <= spawnArea[2][2])
+            local inSpawn =  (   bot.position.x >= spawnArea[1].x
+                            and  bot.position.x <= spawnArea[2].x
+                            and  bot.position.y >= spawnArea[1].y
+                            and  bot.position.y <= spawnArea[2].y)
 
             local path = {}
             table.insert(path, self.game.enemyTeam.flag.position)
