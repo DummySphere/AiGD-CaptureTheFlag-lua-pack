@@ -5,21 +5,22 @@ The Lua starter kit for the Capture the Flag SDK allows you to write your comman
 It uses a network interface (JSON) to give orders to your bots. 
 
 * [Prerequisites](#prerequisites)
-* [Developing on Windows](#windows)
-* [Developing on Linux](#linux)
+* [Developing on Windows](#developing-on-windows)
+* [Developing on Linux](#developing-on-linux)
 * [API](#api)
 * [ToDo](#todo)
 * [History](#history)
+* [License](#license)
 
 
-<a id="prerequisites"></a>Prerequisites
----------------------------------------
+Prerequisites
+-------------
 
 In order to use it you need the aisandbox AND the Capture the Flag SDK. If you have not installed these yet get to http://aisandbox.com/download/. 
 
 
-<a id="windows"></a>Developing on Windows
------------------------------------------
+Developing on Windows
+---------------------
 
 Modify the simulate.py file so that the defaults variable is set with the game.NetworkCommander and the commander that you want to test your commander against.
 eg defaults = ['examples.Defender', 'game.NetworkCommander']
@@ -38,8 +39,8 @@ You can launch the examples with the following commands:
 * `client.bat examples.BalancedCommander`
 
 
-<a id="linux"></a>Developing on Linux
--------------------------------------
+Developing on Linux
+-------------------
 
 Run the game server using simulate.py with game.NetworkCommander as one of the provided commanders.
 eg simulate.py example.GreedyCommander game.NetworkCommander
@@ -57,8 +58,8 @@ You can launch the examples with the following commands:
 * `lua client.lua examples.BalancedCommander`
 
 
-<a id="api"></a>API
--------------------
+API
+---
 
 ### Commander
 
@@ -106,16 +107,16 @@ For more information about available data, see sources and/or [network protocol]
 [network protocol]: http://aisandbox.com/documentation/network.html
 
 
-<a id="todo"></a>ToDo
----------------------
+ToDo
+----
 
 * Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
 
 Please report bugs or suggestions ...
 
 
-<a id="history"></a>History
----------------------------
+History
+-------
 
 ### Version 0.3 (2012-12-03)
 
@@ -137,3 +138,9 @@ Please report bugs or suggestions ...
 
 * Early version release (alpha)
 * Handle protocol version 1.1
+
+
+License
+-------
+
+See [LICENSE.md](LICENSE.md) file.
