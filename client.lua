@@ -6,6 +6,10 @@ io.stdout:setvbuf("no")
 local HOST = "localhost"
 local PORT = "41041"
 local commanderModule = "MyCommander"
+-- local commanderModule = "examples.RandomCommander"
+-- local commanderModule = "examples.DefenderCommander"
+-- local commanderModule = "examples.GreedyCommander"
+-- local commanderModule = "examples.BalancedCommander"
 
 local arg = { ... }
 if #arg == 0 then
@@ -98,6 +102,8 @@ end
 
 require "json"
 
+print("Perform handshaking ...")
+
 local message = readline()
 if message ~= "<connect>" then
 	error(string.format("Expected connect message from the game server. Received %s", message))
@@ -113,6 +119,8 @@ local connectClientJson = JSON.encode(ConnectClient, connectClient)
 writeline("<connect>")
 writeline(connectClientJson)
 
+print("Handshaking done")
+
 -- initialize
 
 local message = readline()
@@ -123,16 +131,21 @@ local levelInfo = JSON.decode(LevelInfo, readline())
 local gameInfo = JSON.decode(GameInfo, readline())
 commander.level = levelInfo
 commander.game = gameInfo
+
+print("Initialize commander ...")
 commander:initialize()
 writeline("<ready>")
 
 -- main loop
 
+print("The game is running ...")
+
 local shutdown = false
 while not shutdown do
 	local message = readline()
 	if message == "<tick>" then
-		commander.game = JSON.decode(GameInfo, readline())
+		local newGame = JSON.decode(GameInfo, readline())
+		commander.game:merge(newGame, false)
 		commander:tick()
 		
         for _, command in ipairs(commander.commands) do
@@ -150,4 +163,8 @@ end
 
 -- shutdown
 
+print("Shuting down ...")
+
 commander:shutdown()
+
+print("The game is finished!")

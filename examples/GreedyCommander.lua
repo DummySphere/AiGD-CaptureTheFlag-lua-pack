@@ -22,7 +22,7 @@ function GreedyCommander:tick()
 
     local our_flag = self.game.team.flag.position
     local their_flag = self.game.enemyTeam.flag.position
-    local their_base = self.game.enemyTeam.botSpawnArea[1]
+    local their_base = (self.game.enemyTeam.botSpawnArea.min + self.game.enemyTeam.botSpawnArea.max) / 2
 
     local option = math.random(3)
     local lookat
@@ -46,10 +46,10 @@ function GreedyCommander:tick()
             end
         else
             local spawnArea = self.game.team.botSpawnArea
-            local inSpawn =  (   bot.position.x >= spawnArea[1].x
-                            and  bot.position.x <= spawnArea[2].x
-                            and  bot.position.y >= spawnArea[1].y
-                            and  bot.position.y <= spawnArea[2].y)
+            local inSpawn =  (   bot.position.x >= spawnArea.min.x
+                            and  bot.position.x <= spawnArea.max.x
+                            and  bot.position.y >= spawnArea.min.y
+                            and  bot.position.y <= spawnArea.max.y)
 
             local path = {}
             table.insert(path, self.game.enemyTeam.flag.position)

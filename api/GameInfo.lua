@@ -38,6 +38,7 @@ function LevelInfo:new(_table)
     self.runningSpeed = _table.runningSpeed                            -- The running speed of the bots
     self.gameLength = _table.gameLength                                -- The time (seconds) that a game will last
     self.initializationTime = _table.initializationTime                -- The time (seconds) allowed to the commanders for initialization
+    self.respawnTime = _table.respawnTime                              -- The time (seconds) between bot respawns
 end
 
 function LevelInfo:findRandomFreePositionInBox(_min, _max)
@@ -110,8 +111,29 @@ function GameInfo:new(_table)
     self.team = _table.team                                            -- The team this commander is controlling
     self.enemyTeam = _table.enemyTeam                                  -- The enemy team for this commander
     self.bots = _table.bots                                            -- Map of bot name to BotInfo
-    self.flags = _table.flags                                          -- Map of flag name to BotInfo
+    self.flags = _table.flags                                          -- Map of flag name to FlagInfo
 
+	self:updateLists()
+end
+
+function GameInfo:merge(_otherGame, _cumulative)
+	self.match:merge(_otherGame.match, self, _cumulative)
+	for name, team in pairs(self.teams) do
+		team:merge(_otherGame.teams[name], self)
+	end
+	assert(self.team.name == _otherGame.team.name)
+	assert(self.enemyTeam.name == _otherGame.enemyTeam.name)
+	for name, bot in pairs(self.bots) do
+		bot:merge(_otherGame.bots[name], self)
+	end
+	for name, flag in pairs(self.flags) do
+		flag:merge(_otherGame.flags[name], self)
+	end
+	
+	self:updateLists()
+end
+
+function GameInfo:updateLists()
     -- updated by the client wrapper before commander tick
 	self.bots_alive = {}                                         		-- List of bots in the commander's team that are alive
 	self.bots_available = {}                                     		-- List of bots in the commander's team that are alive and idle
@@ -146,6 +168,15 @@ function TeamInfo:new(_table)
     self.botSpawnArea = _table.botSpawnArea                            -- The area in which this team's bots are spawned
 end
 
+function TeamInfo:merge(_otherTeam, _game)
+	assert(self.name == _otherTeam.name)
+	-- self.members - no need to update
+	assert(self.flag.name == _otherTeam.flag.name)
+    self.flagSpawnLocation = _otherTeam.flagSpawnLocation -- no need to update
+    self.flagScoreLocation = _otherTeam.flagScoreLocation -- no need to update
+    self.botSpawnArea = _otherTeam.botSpawnArea -- no need to update
+end
+
 ----------------------------------------------------------------------
 -- FlagInfo
 -- Information about each of the flags.
@@ -158,8 +189,16 @@ function FlagInfo:new(_table)
     self.name = _table.name                                            -- The name of this flag
     self.team = _table.team                                            -- The team that owns this flag
     self.position = _table.position                                    -- The position of this flag
-    self.carrier = _table.carrier                                      -- The bot carrying this flag, nullptr if the flag is not being carried
+    self.carrier = _table.carrier                                      -- The bot carrying this flag, nil if the flag is not being carried
     self.respawnTimer = _table.respawnTimer                            -- The time remaining until the dropped flag is respawned
+end
+
+function FlagInfo:merge(_otherFlag, _game)
+	assert(self.name == _otherFlag.name)
+	assert(self.team.name == _otherFlag.team.name)
+    self.position = _otherFlag.position
+    self.carrier = _otherFlag.carrier and _game.bots[_otherFlag.carrier.name]
+    self.respawnTimer = _otherFlag.respawnTimer
 end
 
 ----------------------------------------------------------------------
@@ -199,6 +238,27 @@ function BotInfo:new(_table)
                                                                        -- For enemy bots that are not visible this will be an empty list
 end
 
+function BotInfo:merge(_otherBot, _game)
+	assert(self.name == _otherBot.name)
+	assert(self.team.name == _otherBot.team.name)
+    self.health = _otherBot.health
+    self.state = _otherBot.state
+    self.position = _otherBot.position
+    self.facingDirection = _otherBot.facingDirection
+    self.seenlast = _otherBot.seenlast
+    self.flag = _otherBot.flag and _game.flags[_otherBot.flag.name]
+	
+	self.visibleEnemies = {}
+	for _, bot in ipairs(_otherBot.visibleEnemies) do
+		table.insert(self.visibleEnemies, _game.bots[bot.name])
+	end
+	
+	self.seenBy = {}
+	for _, bot in ipairs(_otherBot.seenBy) do
+		table.insert(self.seenBy, _game.bots[bot.name])
+	end
+end
+
 ----------------------------------------------------------------------
 -- MatchInfo
 -- Information about the current match.
@@ -209,6 +269,30 @@ function MatchInfo:new(_table)
     self.timeRemaining = _table.timeRemaining                          -- The time (seconds) remaining in this game.
     self.timeToNextRespawn = _table.timeToNextRespawn                  -- The time (seconds) until the next bot respawn cycle.
     self.combatEvents = _table.combatEvents                            -- The list of all events that have occured in this game.
+end
+
+function MatchInfo:merge(_otherMatch, _game, _cumulative)
+    self.timeRemaining = _otherMatch.timeRemaining
+    self.timeToNextRespawn = _otherMatch.timeToNextRespawn
+	
+	if not _cumulative then
+		self.combatEvents = {}
+	end
+	
+	for _, combatEvent in ipairs(_otherMatch.combatEvents) do
+		local t = { type = combatEvent.type, time = combatEvent.time, instigator = combatEvent.instigator and _game.bots[combatEvent.instigator.name] }
+		local subject = combatEvent.subject
+		if subject then
+			if subject:GetClass() == BotInfo then
+				t.subject = _game.bots[combatEvent.subject.name]
+			elseif subject:GetClass() == FlagInfo then
+				t.subject = _game.flags[combatEvent.subject.name]
+			else
+				error("MatchInfo: unknown subject type " .. combatEvent.type)
+			end
+		end
+		table.insert(self.combatEvents, MatchCombatEvent(t))
+	end
 end
 
 ----------------------------------------------------------------------

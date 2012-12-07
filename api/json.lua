@@ -190,6 +190,7 @@ JSON.register(
 				firingDistance = _object.firingDistance,
 				gameLength = _object.gameLength,
 				initializationTime = _object.initializationTime,
+				respawnTime = _object.respawnTime,
 			}
 		end,
 		function(_table)
@@ -208,6 +209,7 @@ JSON.register(
 				firingDistance = _table.firingDistance,
 				gameLength = _table.gameLength,
 				initializationTime = _table.initializationTime,
+				respawnTime = _table.respawnTime,
 			}
 		end
 	)

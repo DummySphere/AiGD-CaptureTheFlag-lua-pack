@@ -45,7 +45,7 @@ function BalancedCommander:tick()
             self.defender = bot
 
             -- Stand on a random position in a box of 4m around the flag->
-            local targetPosition = self.game.team.flagScoreLocation
+            local targetPosition = self.game.team.flagSpawnLocation
             local targetMin = targetPosition - Vector2(2, 2)
             local targetMax = targetPosition + Vector2(2, 2)
             local goal = self.level:findRandomFreePositionInBox(targetMin, targetMax) or targetPosition

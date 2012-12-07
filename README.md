@@ -61,6 +61,11 @@ You can launch the examples with the following commands:
 API
 ---
 
+The API described here is just the differences with the [network protocol][].
+For more information about available data, see source code and/or [network protocol][].
+
+[network protocol]: http://aisandbox.com/documentation/network.html
+
 ### Commander
 
 * `commander.level`: `LevelInfo`
@@ -92,31 +97,32 @@ API
 
 ### GameInfo
 
-* `game.*` : data given by the server (cf. [network protocol][]) ; ids are replaced by references to objects (in the level info) when possible.
+* `game.*` : data given by the server (cf. [network protocol][]) ; ids are replaced by references to objects
 * `game.bots_alive` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive
 * `game.bots_available` -> `{ [ BotInfo ]* }` : list of bots in the commander's team that are alive and idle
 
 ### TeamInfo
 
+* `team.*` : data given by the server (cf. [network protocol][]) ; ids are replaced by references to objects
 * `team.botSpawnArea.min` and `team.botSpawnArea.max` : extent of team's bot spawn area
-
-### Others
-
-For more information about available data, see sources and/or [network protocol][].
-
-[network protocol]: http://aisandbox.com/documentation/network.html
 
 
 ToDo
 ----
 
-* Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
+* The GreedyCommander behaves strangely
 
 Please report bugs or suggestions ...
 
 
 History
 -------
+
+### Version 0.4 (2012-12-07)
+
+* Merge received GameInfo at each tick instead of replacing it (to allow the user to extend it)
+* Update to protocol version 1.2.1
+* Crashfix in the GreedyCommander
 
 ### Version 0.3 (2012-12-03)
 
@@ -143,4 +149,6 @@ History
 License
 -------
 
-See [LICENSE.md](LICENSE.md) file.
+This project is released under the **MIT License**.
+
+See the *LICENSE.md* file.
